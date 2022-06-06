@@ -18,17 +18,17 @@
 
 
 
-export const wick = "│";
+export const full_wick = "│";
 const half_wick_bottom = "╵";
 const half_wick_top = "╷";
-const wick_top    = "╽";
-const wick_bottom    = "╿";
-const body        = "┃";
-const doji_thick  = "┿";
-const doji_thin   = "┼";
-const doji_graveStone = "┷"
-const doji_dragonFly = "┯";
-const nomovement  = "⚠"; // OHLC are all the same...
+const body_to_wick_top    = "╽";
+const body_to_wick_bottom    = "╿";
+const full_body        = "┃";
+const star_doji_thick  = "┿";
+const star_doji_thin   = "┼";
+const gravestone_doji = "┷"
+const dragonfly_doji = "┯";
+const no_movement  = "⚠"; // OHLC are all the same... probably an error?
 const little_movement = "━";
 const empty       = " ";
 
@@ -222,25 +222,25 @@ for(let row = 0; row < chartS.length; row++){
 
     // TODO: split checking up between single block candlestick chekcs and multi-block ones.. (i.e., small doji == one block)
     if(isStarDoji(rowPrice, columnOHLC)){ // TODO: fix typo
-      chartS[row][col] = colored(doji_thick);
+      chartS[row][col] = colored(star_doji_thick);
     }else if(isGraveStoneDoji(rowPrice, columnOHLC)){
-      chartS[row][col] = colored(doji_graveStone);
+      chartS[row][col] = colored(gravestone_doji);
     }else if (isDragonFlyDoji(rowPrice, columnOHLC)){
-      chartS[row][col] = colored(doji_dragonFly);
+      chartS[row][col] = colored(dragonfly_doji);
     }else if(isNoMovement(rowPrice, columnOHLC)){
-      chartS[row][col] = colored(nomovement);
+      chartS[row][col] = colored(no_movement);
     }else if(isShortTopWick(rowPrice, columnOHLC)){
       chartS[row][col] = colored(half_wick_top);
     }else if(isTopWick(rowPrice, columnOHLC)){
-      chartS[row][col] =colored(wick_top);
+      chartS[row][col] =colored(body_to_wick_top);
     }else if(isShortBottomWick(rowPrice, columnOHLC)){
       chartS[row][col] = bgBlue(colored(half_wick_bottom));
     }else if(isBottomWick(rowPrice, columnOHLC)){
-      chartS[row][col] = colored(wick_bottom);
+      chartS[row][col] = colored(body_to_wick_bottom);
     }else if(isWick(rowPrice, columnOHLC)){
-      chartS[row][col] = colored(wick);
+      chartS[row][col] = colored(full_wick);
     }else if(isBody(rowPrice, columnOHLC)){
-      chartS[row][col] = colored(body);
+      chartS[row][col] = colored(full_body);
     }else{
       chartS[row][col] = empty;
     }
