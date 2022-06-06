@@ -15,3 +15,18 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+export const Symbols = {
+    full_wick: "│",
+    half_wick_bottom: "╵",
+    half_wick_top: "╷",
+    body_to_wick_top: "╽",
+    body_to_wick_bottom: "╿",
+    full_body: "┃",
+    star_doji_thick: "┿",
+    star_doji_thin: "┼",
+    gravestone_doji: "┷",
+    dragonfly_doji: "┯",
+    no_movement: "⚠", // OHLC are all the same... probably an error?
+    little_movement: "━",
+    empty: " ",
+}
