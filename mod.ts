@@ -15,11 +15,11 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { TOHLC } from "./interfaces/OHLC.ts";
 import { Symbols } from "./utils/Symbols.ts";
 
 
-type OHLC = [/** timestamp*/number, number, number, number, number];
-type OHLCArray = Array<OHLC>;
+type OHLCArray = Array<TOHLC>;
 const data: OHLCArray = ((await fetch("https://api.coingecko.com/api/v3/coins/bitcoin/ohlc?vs_currency=eur&days=1")
                           .then(x=>x.json())) as OHLCArray)
                           .slice(-(Deno.consoleSize(Deno.stdout.rid).columns-10)) // TODO: 10 is too static.. figure something out
@@ -32,7 +32,7 @@ const data: OHLCArray = ((await fetch("https://api.coingecko.com/api/v3/coins/bi
  * @param ppq price position query to check against
  * @param param1 single OHLC data
  */
-function isTopWick(ppq: number, [,open,high,low,close]: OHLC): boolean {
+function isTopWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   // TODO: early escape if one or more conditions not met.
   const bodyTop = Math.max(open, close);
   // top of body within the block but only till halfway through this block.
@@ -48,7 +48,7 @@ function isTopWick(ppq: number, [,open,high,low,close]: OHLC): boolean {
  * @param ppq price position query to check against
  * @param param1 single OHLC data
  */
- function isBottomWick(ppq: number, [,open,high,low,close]: OHLC): boolean {
+ function isBottomWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   // TODO: early escape if one or more conditions not met.
   const bodyBottom = Math.min(open, close);
   const bodyTop = Math.max(open, close);
@@ -61,18 +61,18 @@ function isTopWick(ppq: number, [,open,high,low,close]: OHLC): boolean {
   return ppq < Math.min(open, close) && ppq >= low && BodyBottomWithinCube && bodyTopAboveCube && bodyHalfWayThrough;
 }
 
-function isWick(ppq: number, [,open,high,low,close]: OHLC): boolean {
+function isWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   // TODO: only return true if the wick takes up a significant portion of this cube.. otherwise we branch to a different method that gives shorter wick..
   return (ppq > Math.max(open, close) && ppq <= high) || (ppq < Math.min(open, close) && ppq >= low);
 }
 
-function isShortBottomWick(ppq: number, [,open,high,low,close]: OHLC): boolean {
+function isShortBottomWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   if(low === Math.min(open, close)) return false;
   const lowIsWithinCube = low < (ppq+priceIncrement) && low > (ppq-priceIncrement)
   const wickIsHalfRange = (ppq+priceIncrement) - low <= priceIncrement*0.5 && (ppq+priceIncrement) - low >= priceIncrement*0.1;
   return lowIsWithinCube && wickIsHalfRange;
 }
-function isShortTopWick(ppq: number, [,open,high,low,close]: OHLC): boolean {
+function isShortTopWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   if(high === Math.max(open, close)) return false;
   const highIsWithinCube = high < (ppq+priceIncrement) && high > (ppq-priceIncrement)
   const wickIsHalfRange = high - (ppq-priceIncrement) <= priceIncrement*0.5 && high - (ppq-priceIncrement) >= priceIncrement*0.1;
@@ -83,7 +83,7 @@ function isShortTopWick(ppq: number, [,open,high,low,close]: OHLC): boolean {
  * @param ppq price position query to check against
  * @param param1 single OHLC data
  */
- function isBody(ppq: number, [,open,high,low,close]: OHLC): boolean {
+ function isBody(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   return ppq >= Math.min(open, close) && ppq <= Math.max(open, close)
 }
 
@@ -98,12 +98,12 @@ function isShortBodyBottom(){
   // +1: see above for the opposite.
 }
 
-function isNoMovement(ppq: number, [,open,high,low,close]: OHLC): boolean {
+function isNoMovement(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   const atPrice = low > ppq-priceIncrement && high < ppq+priceIncrement;
   return atPrice && open == close && high == low;
 }
 
-function isTooGranual(ppq: number, [,open,high,low,close]: OHLC): boolean { // TODO: fix typo
+function isTooGranual(ppq: number, [,open,high,low,close]: TOHLC): boolean { // TODO: fix typo
   // TODO: make 3 versions, one with sticks long, sticks short and one that is just a block? 
   const atPrice = (ppq >= low && ppq <= high);
   // is it only going to take up one cube??
@@ -112,7 +112,7 @@ function isTooGranual(ppq: number, [,open,high,low,close]: OHLC): boolean { // T
 }
 
 
-function isStarDoji(ppq: number, [,open,high,low,close]: OHLC): boolean {
+function isStarDoji(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   const bodyHigh = Math.max(open, close);
   const bodyLow = Math.min(open, close);
   // is the body roughly within the middle of our block?
@@ -120,7 +120,7 @@ function isStarDoji(ppq: number, [,open,high,low,close]: OHLC): boolean {
   return isBodyWithin;
 }
 
-function isGraveStoneDoji(ppq: number, [,open,high,low,close]: OHLC): boolean {
+function isGraveStoneDoji(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   const atPrice = (ppq >= Math.min(open, close) && ppq <= Math.max(open, close));
   // opening and closing is happening within one cube
   const openCloseWithinOneCube = Math.abs(open - close) < priceIncrement; // TODO: is this correct?
@@ -134,7 +134,7 @@ function isGraveStoneDoji(ppq: number, [,open,high,low,close]: OHLC): boolean {
 }
 
 // TODO: the dragonfly char is not really conforming to the dragonfly standard.. maybe rename but also make the check differently
-function isDragonFlyDoji(ppq: number, [,open,high,low,close]: OHLC): boolean {
+function isDragonFlyDoji(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   const atPrice = (ppq >= Math.min(open, close) && ppq <= Math.max(open, close));
   const bodyTop = Math.max(open, close);
   const bodyBottom = Math.min(open, close);
