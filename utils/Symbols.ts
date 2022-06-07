@@ -21,6 +21,8 @@ export const Symbols = {
     half_wick_top: "╷",
     body_to_wick_top: "╽",
     body_to_wick_bottom: "╿",
+    half_body_top: "╻",
+    half_body_bottom: "╹",
     full_body: "┃",
     star_doji_thick: "┿",
     star_doji_thin: "┼",
