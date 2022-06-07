@@ -29,7 +29,9 @@ export const Symbols = {
     gravestone_doji: "┷",
     dragonfly_doji: "┯",
     no_movement: "⚠", // OHLC are all the same... probably an error?
-    little_movement: "━",
-    too_granular: "┄",
+    // little_movement: "━",
+    too_granular_top: "▔",
+    too_granular_middle: "━",
+    too_granular_bottom: "▁",
     empty: " ",
 }
