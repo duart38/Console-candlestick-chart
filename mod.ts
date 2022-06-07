@@ -210,6 +210,7 @@ for(let row = 0; row < chartS.length; row++){
   for(let col = 0; col < chartS[row].length; col++){ // TODO: maybe a safer approach would be to check against data.length
     const columnOHLC = data[col];
     const colored = columnOHLC[1] > columnOHLC[4] ? red : green;
+    // TODO: check if within range here to avoid re-calculating it in every method
 
     // TODO: split checking up between single block candlestick chekcs and multi-block ones.. (i.e., small doji == one block)
     if(isStarDoji(rowPrice, columnOHLC)){ // TODO: fix typo
