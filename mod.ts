@@ -70,13 +70,13 @@ function isWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
 function isShortBottomWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   if(low === Math.min(open, close)) return false;
   const lowIsWithinCube = low < (ppq+priceIncrement) && low > (ppq-priceIncrement)
-  const wickIsHalfRange = (ppq+priceIncrement) - low <= priceIncrement*0.7 && (ppq+priceIncrement) - low >= priceIncrement*0.1;
+  const wickIsHalfRange = (ppq+priceIncrement) - low <= priceIncrement*0.5 && (ppq+priceIncrement) - low >= priceIncrement*0.1;
   return lowIsWithinCube && wickIsHalfRange;
 }
 function isShortTopWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   if(high === Math.max(open, close)) return false;
   const highIsWithinCube = high < (ppq+priceIncrement) && high > (ppq-priceIncrement)
-  const wickIsHalfRange = high - (ppq-priceIncrement) <= priceIncrement*0.7 && high - (ppq-priceIncrement) >= priceIncrement*0.1;
+  const wickIsHalfRange = high - (ppq-priceIncrement) <= priceIncrement*0.5 && high - (ppq-priceIncrement) >= priceIncrement*0.1;
   const isTowardsBottom = (ppq+priceIncrement) - high > high - (ppq-priceIncrement);
   return highIsWithinCube && wickIsHalfRange && isTowardsBottom;
 }
