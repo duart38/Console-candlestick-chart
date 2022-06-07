@@ -16,4 +16,7 @@
  */
 
 
+/**
+ * Timestamp, Open, High, Low, Close.
+ */
 export type TOHLC = [/** Timestamp */number, /** Open */number, /** High */number, /** Low */number, /** Close */number];
