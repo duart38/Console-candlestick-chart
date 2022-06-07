@@ -88,7 +88,7 @@ function isShortTopWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   return ppq >= Math.min(open, close) && ppq <= Math.max(open, close)
 }
 
-function isShortBodyTop(){
+function isShortBodyTop(){ // 
   // TODO.. can only occur if the wick is within 0.1 percent distance from the body at the top meaning we dont show it.
   // ofc top needs to be within the cube and take about 50% of the cube or less (>= 10%)
 }
@@ -106,10 +106,11 @@ function isNoMovement(ppq: number, [,open,high,low,close]: TOHLC): boolean {
 
 function isTooGranular(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   // TODO: make 3 versions, one with sticks long, sticks short and one that is just a block? 
-  const atPrice = (ppq >= low && ppq <= high);
+  const atPrice = low > ppq-priceIncrement && high < ppq+priceIncrement;
   // is it only going to take up one cube??
-  const willTakeOnlyOneCube = high - low <= priceIncrement;
-  return atPrice && willTakeOnlyOneCube;
+  // const willTakeOnlyOneCube = high - low <= priceIncrement;
+  const candleTooGranular = high - low > 0 && high - low < priceIncrement*0.1
+  return atPrice /* && willTakeOnlyOneCube */ && candleTooGranular;
 }
 
 
@@ -224,13 +225,15 @@ for(let row = 0; row < chartS.length; row++){
     }else if(isTopWick(rowPrice, columnOHLC)){
       chartS[row][col] =colored(Symbols.body_to_wick_top);
     }else if(isShortBottomWick(rowPrice, columnOHLC)){
-      chartS[row][col] = bgBlue(colored(Symbols.half_wick_bottom));
+      chartS[row][col] = colored(Symbols.half_wick_bottom);
     }else if(isBottomWick(rowPrice, columnOHLC)){
       chartS[row][col] = colored(Symbols.body_to_wick_bottom);
     }else if(isWick(rowPrice, columnOHLC)){
       chartS[row][col] = colored(Symbols.full_wick);
     }else if(isBody(rowPrice, columnOHLC)){
       chartS[row][col] = colored(Symbols.full_body);
+    }else if (isTooGranular(rowPrice, columnOHLC)){
+      chartS[row][col] = bgBlue(colored(Symbols.too_granular));
     }else{
       chartS[row][col] = Symbols.empty;
     }
