@@ -104,7 +104,7 @@ function isNoMovement(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   return atPrice && open == close && high == low;
 }
 
-function isTooGranual(ppq: number, [,open,high,low,close]: TOHLC): boolean { // TODO: fix typo
+function isTooGranular(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   // TODO: make 3 versions, one with sticks long, sticks short and one that is just a block? 
   const atPrice = (ppq >= low && ppq <= high);
   // is it only going to take up one cube??
