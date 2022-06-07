@@ -24,7 +24,8 @@ const data: OHLCArray = ((await fetch("https://api.coingecko.com/api/v3/coins/bi
                           .then(x=>x.json())) as OHLCArray)
                           .slice(-(Deno.consoleSize(Deno.stdout.rid).columns-10)) // TODO: 10 is too static.. figure something out
                           
-                          
+// Dumping for testing
+Deno.writeTextFileSync("DUMP.json", JSON.stringify(data));
 
 
 /**
@@ -115,9 +116,12 @@ function isTooGranual(ppq: number, [,open,high,low,close]: TOHLC): boolean { // 
 function isStarDoji(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   const bodyHigh = Math.max(open, close);
   const bodyLow = Math.min(open, close);
+  // TODO: can we pre-calculate the priceIncrement percentages that are used allot to improve performance? (i.e., priceIncrement*0.2)
   // is the body roughly within the middle of our block?
   const isBodyWithin = bodyLow > (ppq - priceIncrement*0.3) && bodyHigh < (ppq + priceIncrement*0.3);
-  return isBodyWithin;
+  // body needs to be above a certain size to prevent false stars when there is no movement.
+  const isStarBody = bodyHigh - bodyLow >= priceIncrement*0.2;
+  return isBodyWithin && isStarBody;
 }
 
 function isGraveStoneDoji(ppq: number, [,open,high,low,close]: TOHLC): boolean {
