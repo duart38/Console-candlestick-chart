@@ -88,9 +88,18 @@ function isShortTopWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   return ppq >= Math.min(open, close) && ppq <= Math.max(open, close)
 }
 
-function isShortBodyTop(){ // ╻
-  // TODO.. can only occur if the wick is within 0.1 percent distance from the body at the top meaning we dont show it.
-  // ofc top needs to be within the cube and take about 50% of the cube or less (>= 10%)
+function isShortBodyTop(ppq: number, [,open,high,low,close]: TOHLC): boolean { // ╻
+  const bodyTop = Math.max(open, close);
+  const bodyBottom = Math.min(open, close);
+  const distanceBodyTopAndCubeTop = (ppq+priceIncrement) - bodyTop;
+
+  const atPrice = high > ppq-priceIncrement && high < ppq+priceIncrement && bodyTop < ppq+priceIncrement;
+  const wickIsCloseToBodyTop = high - bodyTop <= priceIncrement*0.1;
+  const bodyTopIsHalf =  distanceBodyTopAndCubeTop > priceIncrement*0.2 && distanceBodyTopAndCubeTop <= priceIncrement*0.5;
+  // check if the bottom is below this cube or very very near to the cube
+  const bodyBottomIsBelowOrNearCube = bodyBottom <= ppq-priceIncrement*0.1;
+
+  return atPrice && wickIsCloseToBodyTop && bodyTopIsHalf && bodyBottomIsBelowOrNearCube;
 }
 
 function isShortBodyBottom(){
@@ -231,10 +240,12 @@ for(let row = 0; row < chartS.length; row++){
       chartS[row][col] = colored(Symbols.body_to_wick_bottom);
     }else if(isWick(rowPrice, columnOHLC)){
       chartS[row][col] = colored(Symbols.full_wick);
+    }else if(isShortBodyTop(rowPrice, columnOHLC)){
+      chartS[row][col] = bgBlue(colored(Symbols.half_body_top));
     }else if(isBody(rowPrice, columnOHLC)){
       chartS[row][col] = colored(Symbols.full_body);
     }else if (isTooGranular(rowPrice, columnOHLC)){
-      chartS[row][col] = bgBlue(colored(Symbols.too_granular));
+      chartS[row][col] = colored(Symbols.too_granular);
     }else{
       chartS[row][col] = Symbols.empty;
     }
