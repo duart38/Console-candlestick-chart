@@ -30,6 +30,6 @@ export const Symbols = {
     dragonfly_doji: "┯",
     no_movement: "⚠", // OHLC are all the same... probably an error?
     little_movement: "━",
-    too_granular: "╌",
+    too_granular: "┄",
     empty: " ",
 }
