@@ -102,10 +102,22 @@ function isShortBodyTop(ppq: number, [,open,high,low,close]: TOHLC): boolean { /
   return atPrice && wickIsCloseToBodyTop && bodyTopIsHalf && bodyBottomIsBelowOrNearCube;
 }
 
-function isShortBodyBottom(){
+function isShortBodyBottom(ppq: number, [,open,high,low,close]: TOHLC): boolean{
   // TODO.. can only occur if the wick is within 0.1 percent distance from the body at the bottom meaning we dont show it.
   // ofc top needs to be within the cube and take about 50% of the cube or less (>= 10%)
   // +1: see above for the opposite.
+
+  const bodyTop = Math.max(open, close);
+  const bodyBottom = Math.min(open, close);
+  const distanceBodyBottomAndCubeBottom = bodyBottom - (ppq-priceIncrement);
+
+  const atPrice = low > ppq-priceIncrement && low < ppq+priceIncrement && bodyBottom < ppq+priceIncrement;
+  const wickIsCloseToBodyBottom = bodyBottom - low <= priceIncrement*0.1;
+  const bodyBottomIsHalf =  distanceBodyBottomAndCubeBottom > priceIncrement*0.2 && distanceBodyBottomAndCubeBottom <= priceIncrement*0.5;
+  // check if the bottom is below this cube or very very near to the cube
+  const bodyTopIsAboveOrNearCube = bodyTop >= ppq+priceIncrement*0.1;
+
+  return atPrice && wickIsCloseToBodyBottom && bodyBottomIsHalf && bodyTopIsAboveOrNearCube;
 }
 
 function isNoMovement(ppq: number, [,open,high,low,close]: TOHLC): boolean {
@@ -114,7 +126,6 @@ function isNoMovement(ppq: number, [,open,high,low,close]: TOHLC): boolean {
 }
 
 function isTooGranular(ppq: number, [,open,high,low,close]: TOHLC): boolean {
-  // TODO: make 3 versions, one with sticks long, sticks short and one that is just a block? 
   const atPrice = low > ppq-priceIncrement && high < ppq+priceIncrement;
   // is it only going to take up one cube??
   // const willTakeOnlyOneCube = high - low <= priceIncrement;
@@ -241,7 +252,9 @@ for(let row = 0; row < chartS.length; row++){
     }else if(isWick(rowPrice, columnOHLC)){
       chartS[row][col] = colored(Symbols.full_wick);
     }else if(isShortBodyTop(rowPrice, columnOHLC)){
-      chartS[row][col] = bgBlue(colored(Symbols.half_body_top));
+      chartS[row][col] = colored(Symbols.half_body_top);
+    }else if(isShortBodyBottom(rowPrice, columnOHLC)){
+      chartS[row][col] = bgBlue(colored(Symbols.half_body_bottom));
     }else if(isBody(rowPrice, columnOHLC)){
       chartS[row][col] = colored(Symbols.full_body);
     }else if (isTooGranular(rowPrice, columnOHLC)){
