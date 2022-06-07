@@ -88,7 +88,7 @@ function isShortTopWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   return ppq >= Math.min(open, close) && ppq <= Math.max(open, close)
 }
 
-function isShortBodyTop(){ // 
+function isShortBodyTop(){ // ╻
   // TODO.. can only occur if the wick is within 0.1 percent distance from the body at the top meaning we dont show it.
   // ofc top needs to be within the cube and take about 50% of the cube or less (>= 10%)
 }
