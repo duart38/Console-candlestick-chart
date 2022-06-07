@@ -70,13 +70,13 @@ function isWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
 function isShortBottomWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   if(low === Math.min(open, close)) return false;
   const lowIsWithinCube = low < (ppq+priceIncrement) && low > (ppq-priceIncrement)
-  const wickIsHalfRange = (ppq+priceIncrement) - low <= priceIncrement*0.5 && (ppq+priceIncrement) - low >= priceIncrement*0.1;
+  const wickIsHalfRange = (ppq+priceIncrement) - low <= priceIncrement*0.7 && (ppq+priceIncrement) - low >= priceIncrement*0.1;
   return lowIsWithinCube && wickIsHalfRange;
 }
 function isShortTopWick(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   if(high === Math.max(open, close)) return false;
   const highIsWithinCube = high < (ppq+priceIncrement) && high > (ppq-priceIncrement)
-  const wickIsHalfRange = high - (ppq-priceIncrement) <= priceIncrement*0.5 && high - (ppq-priceIncrement) >= priceIncrement*0.1;
+  const wickIsHalfRange = high - (ppq-priceIncrement) <= priceIncrement*0.7 && high - (ppq-priceIncrement) >= priceIncrement*0.1;
   const isTowardsBottom = (ppq+priceIncrement) - high > high - (ppq-priceIncrement);
   return highIsWithinCube && wickIsHalfRange && isTowardsBottom;
 }
@@ -135,6 +135,17 @@ function isTooGranularTop(ppq: number, [,open,high,low,close]: TOHLC): boolean {
   const closerToTop = (ppq+priceIncrement) - high < low - (ppq-priceIncrement);
   
   return atPrice && candleTooGranular && closerToTop;
+}
+// TODO: one of these does not work.. theres one of each on top on one another.. maybe only work with bodies?
+function isTooGranularBottom(ppq: number, [,open,high,low,close]: TOHLC): boolean {
+  // TODO: top(▔), bottom(▁), middle(━) granularity
+  const atPrice = low > ppq-priceIncrement && high < ppq+priceIncrement;
+
+  // is it only going to take up one cube??
+  const candleTooGranular = high - low > 0 && high - low < priceIncrement*0.1;
+  const closerToBottom = low - (ppq-priceIncrement) < (ppq+priceIncrement) - high;
+  
+  return atPrice && candleTooGranular && closerToBottom;
 }
 
 
@@ -246,7 +257,7 @@ for(let row = 0; row < chartS.length; row++){
     }else if(isNoMovement(rowPrice, columnOHLC)){
       chartS[row][col] = colored(Symbols.no_movement);
     }else if(isShortTopWick(rowPrice, columnOHLC)){
-      chartS[row][col] = bgBlue(colored(Symbols.half_wick_top));
+      chartS[row][col] = colored(Symbols.half_wick_top);
     }else if(isTopWick(rowPrice, columnOHLC)){
       chartS[row][col] =colored(Symbols.body_to_wick_top);
     }else if(isShortBottomWick(rowPrice, columnOHLC)){
@@ -262,7 +273,9 @@ for(let row = 0; row < chartS.length; row++){
     }else if(isBody(rowPrice, columnOHLC)){
       chartS[row][col] = colored(Symbols.full_body);
     }else if (isTooGranularTop(rowPrice, columnOHLC)){
-      chartS[row][col] = bgBlue(colored(Symbols.too_granular_top));
+      chartS[row][col] = colored(Symbols.too_granular_top);
+    }else if(isTooGranularBottom(rowPrice, columnOHLC)){
+      chartS[row][col] = bgBlue(colored(Symbols.too_granular_bottom));
     }else{
       chartS[row][col] = Symbols.empty;
     }
