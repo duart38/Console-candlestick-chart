@@ -3,5 +3,8 @@
     "deno.lint": true,
     "deno.unstable": true,
     "copyrighter.author": "Duart Snel",
-    "copyrighter.license": "GPL3"
+    "copyrighter.license": "GPL3",
+    "cSpell.words": [
+        "TOHLC"
+    ]
 }
