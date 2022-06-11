@@ -88,7 +88,7 @@ for(let row = 0; row < chartS.length; row++){
     // TODO: check if within range here to avoid re-calculating it in every method
 
     // TODO: split checking up between single block candlestick chekcs and multi-block ones.. (i.e., small doji == one block)
-    if(cc.isStarDoji(rowPrice, columnOHLC)){ // TODO: fix typo
+    if(cc.isStarDoji(rowPrice, columnOHLC)){
       chartS[row][col] = colored(Symbols.star_doji_thick);
     }else if(cc.isGraveStoneDoji(rowPrice, columnOHLC)){
       chartS[row][col] = colored(Symbols.gravestone_doji);
