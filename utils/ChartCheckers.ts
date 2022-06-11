@@ -20,7 +20,12 @@ import { TOHLC } from "../interfaces/OHLC.ts";
 export default class ChartChecker {
     constructor(public priceIncrement: number) { }
 
-   
+    protected bodyTop(a: number, b: number): number {
+        return Math.max(a, b);
+    }
+    protected bodyBottom(a: number, b: number): number {
+        return Math.min(a, b);
+    }
 
     /**
      * Check if ppq falls within the range that is classified within the provided OHLC's top wick.
@@ -29,13 +34,13 @@ export default class ChartChecker {
      */
     isTopWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
         // TODO: early escape if one or more conditions not met.
-        const bodyTop = Math.max(open, close);
+        const bodyTop = this.bodyTop(open, close);
         // top of body within the block but only till halfway through this block.
         const BodyHighWithinCube = bodyTop > (ppq - this.priceIncrement * 0.5) //&& bodyTop <= ppq;
         // closing of lower body needs to be BELOW this cube (i.e., not within this cube)
-        const bodyLowIsBelowCube = Math.min(open, close) <= ppq - this.priceIncrement;
+        const bodyLowIsBelowCube = this.bodyBottom(open, close) <= ppq - this.priceIncrement;
 
-        return ppq > Math.max(open, close) && ppq <= high && BodyHighWithinCube && bodyLowIsBelowCube;
+        return ppq > this.bodyTop(open, close) && ppq <= high && BodyHighWithinCube && bodyLowIsBelowCube;
     }
 
     /**
@@ -45,30 +50,30 @@ export default class ChartChecker {
      */
     isBottomWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
         // TODO: early escape if one or more conditions not met.
-        const bodyBottom = Math.min(open, close);
-        const bodyTop = Math.max(open, close);
+        const bodyBottom = this.bodyBottom(open, close);
+        const bodyTop = this.bodyTop(open, close);
 
         // bottom of body within the block but only till halfway through this block.
         const BodyBottomWithinCube = bodyBottom >= (ppq - this.priceIncrement) && bodyBottom < (ppq + this.priceIncrement);
         const bodyTopAboveCube = bodyTop > ppq;
         const bodyHalfWayThrough = (ppq + this.priceIncrement) - bodyBottom <= (this.priceIncrement * 0.5);
 
-        return ppq < Math.min(open, close) && ppq >= low && BodyBottomWithinCube && bodyTopAboveCube && bodyHalfWayThrough;
+        return ppq < this.bodyBottom(open, close) && ppq >= low && BodyBottomWithinCube && bodyTopAboveCube && bodyHalfWayThrough;
     }
 
     isWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
         // TODO: only return true if the wick takes up a significant portion of this cube.. otherwise we branch to a different method that gives shorter wick..
-        return (ppq > Math.max(open, close) && ppq <= high) || (ppq < Math.min(open, close) && ppq >= low);
+        return (ppq > this.bodyTop(open, close) && ppq <= high) || (ppq < this.bodyBottom(open, close) && ppq >= low);
     }
 
     isShortBottomWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
-        if (low === Math.min(open, close)) return false;
+        if (low === this.bodyBottom(open, close)) return false;
         const lowIsWithinCube = low < (ppq + this.priceIncrement) && low > (ppq - this.priceIncrement)
         const wickIsHalfRange = (ppq + this.priceIncrement) - low <= this.priceIncrement * 0.5 && (ppq + this.priceIncrement) - low >= this.priceIncrement * 0.1;
         return lowIsWithinCube && wickIsHalfRange;
     }
     isShortTopWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
-        if (high === Math.max(open, close)) return false;
+        if (high === this.bodyTop(open, close)) return false;
         const highIsWithinCube = high < (ppq + this.priceIncrement) && high > (ppq - this.priceIncrement)
         const wickIsHalfRange = high - (ppq - this.priceIncrement) <= this.priceIncrement * 0.5 && high - (ppq - this.priceIncrement) >= this.priceIncrement * 0.1;
         const isTowardsBottom = (ppq + this.priceIncrement) - high > high - (ppq - this.priceIncrement);
@@ -80,12 +85,12 @@ export default class ChartChecker {
      * @param param1 single OHLC data
      */
     isBody(ppq: number, [, open, high, low, close]: TOHLC): boolean {
-        return ppq >= Math.min(open, close) && ppq <= Math.max(open, close)
+        return ppq >= this.bodyBottom(open, close) && ppq <= this.bodyTop(open, close)
     }
 
     isShortBodyTop(ppq: number, [, open, high, low, close]: TOHLC): boolean { // ╻
-        const bodyTop = Math.max(open, close);
-        const bodyBottom = Math.min(open, close);
+        const bodyTop = this.bodyTop(open, close);
+        const bodyBottom = this.bodyBottom(open, close);
         const distanceBodyTopAndCubeTop = (ppq + this.priceIncrement) - bodyTop;
 
         const atPrice = high > ppq - this.priceIncrement && high < ppq + this.priceIncrement && bodyTop < ppq + this.priceIncrement;
@@ -102,8 +107,8 @@ export default class ChartChecker {
         // ofc top needs to be within the cube and take about 50% of the cube or less (>= 10%)
         // +1: see above for the opposite.
 
-        const bodyTop = Math.max(open, close);
-        const bodyBottom = Math.min(open, close);
+        const bodyTop = this.bodyTop(open, close);
+        const bodyBottom = this.bodyBottom(open, close);
         const distanceBodyBottomAndCubeBottom = bodyBottom - (ppq - this.priceIncrement);
 
         const atPrice = low > ppq - this.priceIncrement && low < ppq + this.priceIncrement && bodyBottom < ppq + this.priceIncrement;
@@ -144,8 +149,8 @@ export default class ChartChecker {
 
 
     isStarDoji(ppq: number, [, open, high, low, close]: TOHLC): boolean {
-        const bodyHigh = Math.max(open, close);
-        const bodyLow = Math.min(open, close);
+        const bodyHigh = this.bodyTop(open, close);
+        const bodyLow = this.bodyBottom(open, close);
         // TODO: can we pre-calculate the this.priceIncrement percentages that are used allot to improve performance? (i.e., this.priceIncrement*0.2)
         // is the body roughly within the middle of our block?
         const isBodyWithin = bodyLow > (ppq - this.priceIncrement * 0.3) && bodyHigh < (ppq + this.priceIncrement * 0.3);
@@ -155,13 +160,13 @@ export default class ChartChecker {
     }
 
     isGraveStoneDoji(ppq: number, [, open, high, low, close]: TOHLC): boolean {
-        const atPrice = (ppq >= Math.min(open, close) && ppq <= Math.max(open, close));
+        const atPrice = (ppq >= this.bodyBottom(open, close) && ppq <= this.bodyTop(open, close));
         // opening and closing is happening within one cube
         const openCloseWithinOneCube = Math.abs(open - close) < this.priceIncrement; // TODO: is this correct?
         // are we at the lower bound? used to put the gravestone base(┷)...
-        const lowerBounded = Math.min(open, close) - low < this.priceIncrement / 3;
+        const lowerBounded = this.bodyBottom(open, close) - low < this.priceIncrement / 3;
         // top wick needs to be larger than bottom wick
-        const topWickLarger = high - Math.max(open, close) > Math.min(open, close) - low;
+        const topWickLarger = high - this.bodyTop(open, close) > this.bodyBottom(open, close) - low;
 
         if (atPrice && openCloseWithinOneCube && lowerBounded && topWickLarger) console.log("GRAVESTONE DOJI!!")
         return atPrice && openCloseWithinOneCube && lowerBounded && topWickLarger;
@@ -169,15 +174,15 @@ export default class ChartChecker {
 
     // TODO: the dragonfly char is not really conforming to the dragonfly standard.. maybe rename but also make the check differently
     isDragonFlyDoji(ppq: number, [, open, high, low, close]: TOHLC): boolean {
-        const atPrice = (ppq >= Math.min(open, close) && ppq <= Math.max(open, close));
-        const bodyTop = Math.max(open, close);
-        const bodyBottom = Math.min(open, close);
+        const atPrice = (ppq >= this.bodyBottom(open, close) && ppq <= this.bodyTop(open, close));
+        const bodyTop = this.bodyTop(open, close);
+        const bodyBottom = this.bodyBottom(open, close);
         // opening and closing is happening within one cube
         const openCloseWithinOneCube = bodyBottom > (ppq - this.priceIncrement) && bodyTop < (ppq + this.priceIncrement);
         // high is within this cube aswel
         const highWithinCube = high < (ppq + this.priceIncrement) && high > (ppq - this.priceIncrement);
         // are we at the upper bound? used to put the dragonfly base(┷)...
-        // const upperBounded = high - Math.min(open, close) < this.priceIncrement/3;
+        // const upperBounded = high - this.bodyBottom(open, close) < this.priceIncrement/3;
         // const upperBounded = (ppq + this.priceIncrement) - bodyBottom < this.priceIncrement*0.5;
         const upperBounded = (ppq + this.priceIncrement) - bodyTop <= this.priceIncrement * 0.2;
 
