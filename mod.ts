@@ -20,16 +20,6 @@ import ChartChecker from "./utils/ChartCheckers.ts";
 import { Symbols } from "./utils/Symbols.ts";
 
 
-type OHLCArray = Array<TOHLC>;
-const data: OHLCArray = ((await fetch("https://api.coingecko.com/api/v3/coins/bitcoin/ohlc?vs_currency=eur&days=1")
-  .then(x => x.json())) as OHLCArray)
-  .slice(-(Deno.consoleSize(Deno.stdout.rid).columns - 10)) // TODO: 10 is too static.. figure something out
-
-// Dumping for testing
-Deno.writeTextFileSync("DUMP.json", JSON.stringify(data));
-
-
-
 export class Chart {
   public lowest_point: number;
   public highest_point: number;
@@ -39,7 +29,7 @@ export class Chart {
   private chartS: Array<Array<string>>;
 
   // TODO: options to pass in custom Symbols etc
-  constructor(public data: OHLCArray) {
+  constructor(public data: Array<TOHLC>) {
 
     this.lowest_point = data.reduce((prev, curr) => curr[3] < prev ? curr[3] : prev, Infinity);
     this.highest_point = data.reduce((prev, curr) => curr[2] > prev ? curr[2] : prev, 0);
@@ -137,10 +127,3 @@ function bold(x: string) {
 function bgBlue(x: string) {
   return `\x1b[44m${x}${RESET}`;
 }
-
-
-
-
-const chart = new Chart(data);
-
-console.log(chart.render());
