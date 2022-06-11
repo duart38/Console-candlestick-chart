@@ -168,7 +168,6 @@ export default class ChartChecker {
         // top wick needs to be larger than bottom wick
         const topWickLarger = high - this.bodyTop(open, close) > this.bodyBottom(open, close) - low;
 
-        if (atPrice && openCloseWithinOneCube && lowerBounded && topWickLarger) console.log("GRAVESTONE DOJI!!")
         return atPrice && openCloseWithinOneCube && lowerBounded && topWickLarger;
     }
 
