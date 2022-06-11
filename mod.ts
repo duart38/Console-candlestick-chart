@@ -16,6 +16,7 @@
  */
 
 import { TOHLC } from "./interfaces/OHLC.ts";
+import { Color } from "./utils/ANSI.ts";
 import ChartChecker from "./utils/ChartCheckers.ts";
 import { Symbols } from "./utils/Symbols.ts";
 
@@ -52,7 +53,7 @@ export class Chart {
       const rowPrice = this.calculateRowPrice(row);
       for (let col = 0; col < this.chartS[row].length; col++) { // TODO: maybe a safer approach would be to check against data.length
         const columnOHLC = data[col];
-        const colored = columnOHLC[1] > columnOHLC[4] ? red : green;
+        const colored = columnOHLC[1] > columnOHLC[4] ? Color.red :Color. green;
         // TODO: check if within range here to avoid re-calculating it in every method
 
         // TODO: split checking up between single block candlestick chekcs and multi-block ones.. (i.e., small doji == one block)
@@ -83,7 +84,7 @@ export class Chart {
         } else if (cc.isTooGranularTop(rowPrice, columnOHLC)) {
           this.chartS[row][col] = colored(Symbols.too_granular_top);
         } else if (cc.isTooGranularBottom(rowPrice, columnOHLC)) {
-          this.chartS[row][col] = bgBlue(colored(Symbols.too_granular_bottom));
+          this.chartS[row][col] = Color.bgBlue(colored(Symbols.too_granular_bottom));
         } else {
           this.chartS[row][col] = Symbols.empty;
         }
@@ -107,23 +108,4 @@ export class Chart {
     }
     return chartString;
   }
-}
-
-
-
-const RESET = '\x1b[0m';
-
-// TODO: make body bright green and wick normal green
-function green(x: string) {
-  return `\x1b[32m${x}${RESET}`
-}
-function red(x: string) {
-  return `\x1b[31m${x}${RESET}`
-}
-function bold(x: string) {
-  return `\x1b[1m${x}${RESET}`
-}
-
-function bgBlue(x: string) {
-  return `\x1b[44m${x}${RESET}`;
 }
