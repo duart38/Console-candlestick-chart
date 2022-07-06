@@ -32,6 +32,12 @@ export default class ChartChecker {
     protected cubeBottom(ppq: number){
         return ppq - this.priceIncrement;
     }
+    public hasDataWithinCube(ppq: number, [,, high, low,]: TOHLC){
+        return (
+            low > this.cubeBottom(ppq) || low < this.cubeTop(ppq) ||
+            high > this.cubeBottom(ppq) || high < this.cubeTop(ppq)
+        );
+    }
     /**
      * Check if ppq falls within the range that is classified within the provided OHLC's top wick.
      * @param ppq price position query to check against
