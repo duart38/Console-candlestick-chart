@@ -21,17 +21,54 @@ import ChartChecker from "./utils/ChartCheckers.ts";
 import { Symbols } from "./utils/Symbols.ts";
 
 
+export type SIGWINCH_CB = (newSize: {rows: number, cols: number})=>void;
+export type TChartOptions = {
+  changeInternalSizeOnSigwinch: boolean,
+}
+export const ChartOptions: TChartOptions = {
+  changeInternalSizeOnSigwinch: false,
+}
+
 export class Chart {
   public lowest_point = 0;
   public highest_point = 0;
   public priceIncrement = 0;
+
   private rows = 0;
   private cols = 0;
+
   private chartS: Array<Array<string>> = [];
+  private sizeChangeCbs: SIGWINCH_CB[] = [];
 
   // TODO: options to pass in custom Symbols etc
-  constructor(public data: Array<TOHLC>) {
+  constructor(public data: Array<TOHLC>, private options = ChartOptions) {
     this._reCalc(data);
+  }
+
+  private getLeftPadding(){
+    return this.highest_point.toFixed(2).length;
+  }
+  private getVerticalPadding(){
+    return 5; // TODO: figure this one out
+  }
+
+  private _registerSIGWINCHEvent() {
+    Deno.addSignalListener("SIGWINCH", ()=>{
+      let {rows, columns} = Deno.consoleSize(Deno.stdout.rid)//.rows - 5
+      rows -= this.getVerticalPadding();
+      columns -= this.getLeftPadding();
+
+      if(this.options.changeInternalSizeOnSigwinch){
+        this.rows = rows;
+        this.cols = columns;
+      }
+
+      // TODO: auto-render?
+      // TODO: make changing of rows and cols optional?
+      
+      if(this.sizeChangeCbs.length === 0) return;
+      for(const cb of this.sizeChangeCbs) cb({rows, cols: columns})
+    });
   }
 
   private _reCalc(data: Array<TOHLC>){
@@ -110,6 +147,10 @@ export class Chart {
       rows: this.rows,
       cols: this.cols
     }
+  }
+
+  public onConsoleSizeChange(cb: SIGWINCH_CB){
+    this.sizeChangeCbs.push(cb);
   }
 
   public render() {
