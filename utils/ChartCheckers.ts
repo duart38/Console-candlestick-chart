@@ -26,7 +26,12 @@ export default class ChartChecker {
     protected bodyBottom(a: number, b: number): number {
         return Math.min(a, b);
     }
-
+    protected cubeTop(ppq: number){
+        return ppq + this.priceIncrement;
+    }
+    protected cubeBottom(ppq: number){
+        return ppq - this.priceIncrement;
+    }
     /**
      * Check if ppq falls within the range that is classified within the provided OHLC's top wick.
      * @param ppq price position query to check against
@@ -36,9 +41,9 @@ export default class ChartChecker {
         // TODO: early escape if one or more conditions not met.
         const bodyTop = this.bodyTop(open, close);
         // top of body within the block but only till halfway through this block.
-        const BodyHighWithinCube = bodyTop > (ppq - this.priceIncrement * 0.5) //&& bodyTop <= ppq;
+        const BodyHighWithinCube = bodyTop > (this.cubeBottom(ppq) * 0.5) //&& bodyTop <= ppq;
         // closing of lower body needs to be BELOW this cube (i.e., not within this cube)
-        const bodyLowIsBelowCube = this.bodyBottom(open, close) <= ppq - this.priceIncrement;
+        const bodyLowIsBelowCube = this.bodyBottom(open, close) <= this.cubeBottom(ppq);
 
         return ppq > this.bodyTop(open, close) && ppq <= high && BodyHighWithinCube && bodyLowIsBelowCube;
     }
@@ -54,9 +59,9 @@ export default class ChartChecker {
         const bodyTop = this.bodyTop(open, close);
 
         // bottom of body within the block but only till halfway through this block.
-        const BodyBottomWithinCube = bodyBottom >= (ppq - this.priceIncrement) && bodyBottom < (ppq + this.priceIncrement);
+        const BodyBottomWithinCube = bodyBottom >= (this.cubeBottom(ppq)) && bodyBottom < (this.cubeTop(ppq));
         const bodyTopAboveCube = bodyTop > ppq;
-        const bodyHalfWayThrough = (ppq + this.priceIncrement) - bodyBottom <= (this.priceIncrement * 0.5);
+        const bodyHalfWayThrough = (this.cubeTop(ppq)) - bodyBottom <= (this.priceIncrement * 0.5);
 
         return ppq < this.bodyBottom(open, close) && ppq >= low && BodyBottomWithinCube && bodyTopAboveCube && bodyHalfWayThrough;
     }
@@ -68,15 +73,15 @@ export default class ChartChecker {
 
     isShortBottomWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
         if (low === this.bodyBottom(open, close)) return false;
-        const lowIsWithinCube = low < (ppq + this.priceIncrement) && low > (ppq - this.priceIncrement)
-        const wickIsHalfRange = (ppq + this.priceIncrement) - low <= this.priceIncrement * 0.5 && (ppq + this.priceIncrement) - low >= this.priceIncrement * 0.1;
+        const lowIsWithinCube = low < (this.cubeTop(ppq)) && low > (this.cubeBottom(ppq))
+        const wickIsHalfRange = (this.cubeTop(ppq)) - low <= this.priceIncrement * 0.5 && (this.cubeTop(ppq)) - low >= this.priceIncrement * 0.1;
         return lowIsWithinCube && wickIsHalfRange;
     }
     isShortTopWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
         if (high === this.bodyTop(open, close)) return false;
-        const highIsWithinCube = high < (ppq + this.priceIncrement) && high > (ppq - this.priceIncrement)
-        const wickIsHalfRange = high - (ppq - this.priceIncrement) <= this.priceIncrement * 0.5 && high - (ppq - this.priceIncrement) >= this.priceIncrement * 0.1;
-        const isTowardsBottom = (ppq + this.priceIncrement) - high > high - (ppq - this.priceIncrement);
+        const highIsWithinCube = high < (this.cubeTop(ppq)) && high > (this.cubeBottom(ppq))
+        const wickIsHalfRange = high - (this.cubeBottom(ppq)) <= this.priceIncrement * 0.5 && high - (this.cubeBottom(ppq)) >= this.priceIncrement * 0.1;
+        const isTowardsBottom = (this.cubeTop(ppq)) - high > high - (this.cubeBottom(ppq));
         return highIsWithinCube && wickIsHalfRange && isTowardsBottom;
     }
     /**
@@ -91,13 +96,13 @@ export default class ChartChecker {
     isShortBodyTop(ppq: number, [, open, high, low, close]: TOHLC): boolean { // ╻
         const bodyTop = this.bodyTop(open, close);
         const bodyBottom = this.bodyBottom(open, close);
-        const distanceBodyTopAndCubeTop = (ppq + this.priceIncrement) - bodyTop;
+        const distanceBodyTopAndCubeTop = (this.cubeTop(ppq)) - bodyTop;
 
-        const atPrice = high > ppq - this.priceIncrement && high < ppq + this.priceIncrement && bodyTop < ppq + this.priceIncrement;
+        const atPrice = high > this.cubeBottom(ppq) && high < this.cubeTop(ppq) && bodyTop < this.cubeTop(ppq);
         const wickIsCloseToBodyTop = high - bodyTop <= this.priceIncrement * 0.1;
         const bodyTopIsHalf = distanceBodyTopAndCubeTop > this.priceIncrement * 0.2 && distanceBodyTopAndCubeTop <= this.priceIncrement * 0.5;
         // check if the bottom is below this cube or very very near to the cube
-        const bodyBottomIsBelowOrNearCube = bodyBottom <= ppq - this.priceIncrement * 0.1;
+        const bodyBottomIsBelowOrNearCube = bodyBottom <= this.cubeBottom(ppq) * 0.1;
 
         return atPrice && wickIsCloseToBodyTop && bodyTopIsHalf && bodyBottomIsBelowOrNearCube;
     }
@@ -109,40 +114,42 @@ export default class ChartChecker {
 
         const bodyTop = this.bodyTop(open, close);
         const bodyBottom = this.bodyBottom(open, close);
-        const distanceBodyBottomAndCubeBottom = bodyBottom - (ppq - this.priceIncrement);
+        const distanceBodyBottomAndCubeBottom = bodyBottom - (this.cubeBottom(ppq));
 
-        const atPrice = low > ppq - this.priceIncrement && low < ppq + this.priceIncrement && bodyBottom < ppq + this.priceIncrement;
+        const atPrice = low > this.cubeBottom(ppq) && low < this.cubeTop(ppq) && bodyBottom < this.cubeTop(ppq);
         const wickIsCloseToBodyBottom = bodyBottom - low <= this.priceIncrement * 0.1;
         const bodyBottomIsHalf = distanceBodyBottomAndCubeBottom > this.priceIncrement * 0.2 && distanceBodyBottomAndCubeBottom <= this.priceIncrement * 0.5;
         // check if the bottom is below this cube or very very near to the cube
-        const bodyTopIsAboveOrNearCube = bodyTop >= ppq + this.priceIncrement * 0.1;
+        const bodyTopIsAboveOrNearCube = bodyTop >= this.cubeTop(ppq) * 0.1;
 
         return atPrice && wickIsCloseToBodyBottom && bodyBottomIsHalf && bodyTopIsAboveOrNearCube;
     }
 
     isNoMovement(ppq: number, [, open, high, low, close]: TOHLC): boolean {
-        const atPrice = low > ppq - this.priceIncrement && high < ppq + this.priceIncrement;
+        const atPrice = low > this.cubeBottom(ppq) && high < this.cubeTop(ppq);
         return atPrice && open == close && high == low;
     }
 
     isTooGranularTop(ppq: number, [, open, high, low, close]: TOHLC): boolean {
         // TODO: top(▔), bottom(▁), middle(━) granularity
-        const atPrice = low > ppq - this.priceIncrement && high < ppq + this.priceIncrement;
+        const atPrice = low > this.cubeBottom(ppq) && high < this.cubeTop(ppq);
+        if(this.bodyTop(open, close) > this.cubeTop(ppq) || this.bodyBottom(open, close) < this.cubeBottom(ppq)) return false;
 
         // is it only going to take up one cube??
         const candleTooGranular = high - low > 0 && high - low < this.priceIncrement * 0.1;
-        const closerToTop = (ppq + this.priceIncrement) - high < low - (ppq - this.priceIncrement);
+        const closerToTop = (this.cubeTop(ppq)) - high < low - (this.cubeBottom(ppq));
 
         return atPrice && candleTooGranular && closerToTop;
     }
     // TODO: one of these does not work.. theres one of each on top on one another.. maybe only work with bodies?
     isTooGranularBottom(ppq: number, [, open, high, low, close]: TOHLC): boolean {
         // TODO: top(▔), bottom(▁), middle(━) granularity
-        const atPrice = low > ppq - this.priceIncrement && high < ppq + this.priceIncrement;
+        const atPrice = low > this.cubeBottom(ppq) && high < this.cubeTop(ppq);
+        if(this.bodyTop(open, close) > this.cubeTop(ppq) || this.bodyBottom(open, close) < this.cubeBottom(ppq)) return false;
 
         // is it only going to take up one cube??
         const candleTooGranular = high - low > 0 && high - low < this.priceIncrement * 0.1;
-        const closerToBottom = low - (ppq - this.priceIncrement) < (ppq + this.priceIncrement) - high;
+        const closerToBottom = low - (this.cubeBottom(ppq)) < (this.cubeTop(ppq)) - high;
 
         return atPrice && candleTooGranular && closerToBottom;
     }
@@ -153,7 +160,7 @@ export default class ChartChecker {
         const bodyLow = this.bodyBottom(open, close);
         // TODO: can we pre-calculate the this.priceIncrement percentages that are used allot to improve performance? (i.e., this.priceIncrement*0.2)
         // is the body roughly within the middle of our block?
-        const isBodyWithin = bodyLow > (ppq - this.priceIncrement * 0.3) && bodyHigh < (ppq + this.priceIncrement * 0.3);
+        const isBodyWithin = bodyLow > (this.cubeBottom(ppq) * 0.3) && bodyHigh < (this.cubeTop(ppq) * 0.3);
         // body needs to be above a certain size to prevent false stars when there is no movement.
         const isStarBody = bodyHigh - bodyLow >= this.priceIncrement * 0.2;
         return isBodyWithin && isStarBody;
@@ -177,13 +184,13 @@ export default class ChartChecker {
         const bodyTop = this.bodyTop(open, close);
         const bodyBottom = this.bodyBottom(open, close);
         // opening and closing is happening within one cube
-        const openCloseWithinOneCube = bodyBottom > (ppq - this.priceIncrement) && bodyTop < (ppq + this.priceIncrement);
+        const openCloseWithinOneCube = bodyBottom > (this.cubeBottom(ppq)) && bodyTop < (this.cubeTop(ppq));
         // high is within this cube aswel
-        const highWithinCube = high < (ppq + this.priceIncrement) && high > (ppq - this.priceIncrement);
+        const highWithinCube = high < (this.cubeTop(ppq)) && high > (this.cubeBottom(ppq));
         // are we at the upper bound? used to put the dragonfly base(┷)...
         // const upperBounded = high - this.bodyBottom(open, close) < this.priceIncrement/3;
-        // const upperBounded = (ppq + this.priceIncrement) - bodyBottom < this.priceIncrement*0.5;
-        const upperBounded = (ppq + this.priceIncrement) - bodyTop <= this.priceIncrement * 0.2;
+        // const upperBounded = (this.cubeTop(ppq)) - bodyBottom < this.priceIncrement*0.5;
+        const upperBounded = (this.cubeTop(ppq)) - bodyTop <= this.priceIncrement * 0.2;
 
         // bottom wick needs to be larger than top wick
         const bottomWickLarger = bodyBottom - low > high - bodyTop;
