@@ -29,6 +29,12 @@ export type TChartOptions = {
    * > Does not do anything unless listenForSIGWINCH is set to true
    */
   changeInternalSizeOnSigwinch: boolean,
+
+  // TODO: bullish color
+  // TODO: bearish color
+  // TODO: bg color
+  // TODO: manual row and column sizing
+  // TODO: different symbols
 }
 export const ChartOptions: TChartOptions = {
   listenForSIGWINCH: true,
