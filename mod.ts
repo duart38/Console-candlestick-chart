@@ -117,12 +117,11 @@ export class Chart {
       const rowPrice = this.calculateRowPrice(row);
       for (let col = 0; col < this.chartS[row].length; col++) {
         const columnOHLC = this.data[col];
-        if(columnOHLC === undefined){
+        if(columnOHLC === undefined || cc.hasDataWithinCube(rowPrice, columnOHLC) === false){
           this.chartS[row][col] = Symbols.empty;
           continue;
         }
         const colored = columnOHLC[1] > columnOHLC[4] ? Color.red :Color. green;
-        // TODO: check if within range here to avoid re-calculating it in every method
 
         // TODO: split checking up between single block candlestick chekcs and multi-block ones.. (i.e., small doji == one block)
         if (cc.isStarDoji(rowPrice, columnOHLC)) {
@@ -153,7 +152,8 @@ export class Chart {
           this.chartS[row][col] = colored(Symbols.too_granular_top);
         } else if (cc.isTooGranularBottom(rowPrice, columnOHLC)) {
           this.chartS[row][col] = Color.bgBlue(colored(Symbols.too_granular_bottom));
-        } else {
+        } // TODO: met for: something is to be rendered (not empty) but did not hit any of our thingies
+        else {
           this.chartS[row][col] = Symbols.empty;
         }
       }
