@@ -24,11 +24,14 @@ import { Symbols } from "./utils/Symbols.ts";
 export type SIGWINCH_CB = (newSize: {rows: number, cols: number})=>void;
 export type TChartOptions = {
   listenForSIGWINCH: boolean,
+
+  // changeInternalSizeOnSigwinch: boolean,
   /**
-   * Indicates if the logic should change the rows and columns when the console size changes.
-   * > Does not do anything unless listenForSIGWINCH is set to true
+   * Indicates if the logic should change trigger an internal render when the size of the console changes.
+   * Triggering a render will change the internal rows/column variables.
+   * > Does NOT do anything unless listenForSIGWINCH is set to true
    */
-  changeInternalSizeOnSigwinch: boolean,
+  renderOnSIGWINCH: boolean
 
   // TODO: bullish color
   // TODO: bearish color
@@ -38,7 +41,7 @@ export type TChartOptions = {
 }
 export const ChartOptions: TChartOptions = {
   listenForSIGWINCH: true,
-  changeInternalSizeOnSigwinch: false,
+  renderOnSIGWINCH: true
 }
 
 export class Chart {
@@ -51,10 +54,11 @@ export class Chart {
 
   private chartS: Array<Array<string>> = [];
   private sizeChangeCbs: SIGWINCH_CB[] = [];
+  private beforeRenderCbs: (()=>void)[] = [];
 
   // TODO: options to pass in custom Symbols etc
-  constructor(public data: Array<TOHLC>, private options = ChartOptions) {
-    this._reCalc(data);
+  constructor(private data: Array<TOHLC>, private options = ChartOptions) {
+    this._reCalc();
     this._registerSIGWINCHEvent();
   }
 
@@ -72,9 +76,8 @@ export class Chart {
       rows -= this.getVerticalPadding();
       columns -= this.getLeftPadding();
 
-      if(this.options.changeInternalSizeOnSigwinch){
-        this.rows = rows;
-        this.cols = columns;
+      if(this.options.renderOnSIGWINCH){
+        this._reCalc();
       }
 
       // TODO: auto-render?
@@ -86,10 +89,11 @@ export class Chart {
     setInterval(()=>{}, 10^10)
   }
 
-  private _reCalc(data: Array<TOHLC>){
-    this.data = data;
-    this.lowest_point = data.reduce((prev, curr) => curr[3] < prev ? curr[3] : prev, Infinity);
-    this.highest_point = data.reduce((prev, curr) => curr[2] > prev ? curr[2] : prev, 0);
+  private _reCalc(){
+    if(this.beforeRenderCbs.length>0) for(const cb of this.beforeRenderCbs) cb();
+    
+    this.lowest_point = this.data.reduce((prev, curr) => curr[3] < prev ? curr[3] : prev, Infinity);
+    this.highest_point = this.data.reduce((prev, curr) => curr[2] > prev ? curr[2] : prev, 0);
 
     // TODO: check if deno is not available.. default to other thing
     this.rows = Deno.consoleSize(Deno.stdout.rid).rows - 5;
@@ -109,7 +113,7 @@ export class Chart {
     for (let row = 0; row < this.chartS.length; row++) {
       const rowPrice = this.calculateRowPrice(row);
       for (let col = 0; col < this.chartS[row].length; col++) { // TODO: maybe a safer approach would be to check against data.length
-        const columnOHLC = data[col];
+        const columnOHLC = this.data[col];
         if(columnOHLC === undefined){
           this.chartS[row][col] = Symbols.empty;
           continue;
@@ -166,6 +170,13 @@ export class Chart {
 
   public onConsoleSizeChange(cb: SIGWINCH_CB){
     this.sizeChangeCbs.push(cb);
+  }
+
+  /**
+   * Called before the chart is internally rendered. Can, for example, be used to modify the data beforehand
+   */
+  public onBeforeRender(cb: ()=>void){
+    this.beforeRenderCbs.push(cb);
   }
 
   public render() {
