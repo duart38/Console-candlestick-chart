@@ -56,14 +56,17 @@ export class Chart {
   private sizeChangeCbs: SIGWINCH_CB[] = [];
   private beforeRenderCbs: (()=>void)[] = [];
 
+  private slicedData: Array<TOHLC>;
+
   // TODO: options to pass in custom Symbols etc
-  constructor(private data: Array<TOHLC>, private options = ChartOptions) {
+  constructor(public data: Array<TOHLC>, private options = ChartOptions) {
+    this.slicedData = data;
     this._reCalc();
     this._registerSIGWINCHEvent();
   }
 
   private getLeftPadding(){
-    return this.highest_point.toFixed(2).length + 2;
+    return this.highest_point.toFixed(2).toString().padStart(this.highest_point.toString().length).length + 2;
   }
   private getVerticalPadding(){
     return 5; // TODO: figure this one out
@@ -92,17 +95,20 @@ export class Chart {
   private _reCalc(){
     if(this.beforeRenderCbs.length>0) for(const cb of this.beforeRenderCbs) cb();
 
-    this.lowest_point = this.data.reduce((prev, curr) => curr[3] < prev ? curr[3] : prev, Infinity);
-    this.highest_point = this.data.reduce((prev, curr) => curr[2] > prev ? curr[2] : prev, 0);
-
     const cs = Deno.consoleSize(Deno.stdout.rid);
+    // cut up data to only show newest items based on the width of the console.
+    this.slicedData = this.data.slice(-(cs.columns) - this.getLeftPadding());
+
+    this.lowest_point = this.slicedData.reduce((prev, curr) => curr[3] < prev ? curr[3] : prev, Infinity);
+    this.highest_point = this.slicedData.reduce((prev, curr) => curr[2] > prev ? curr[2] : prev, 0);
+
     // TODO: check if deno is not available.. default to other thing
     this.rows = cs.rows - this.getVerticalPadding();
     this.priceIncrement = ((this.highest_point + 1) - (this.lowest_point - 1)) / (this.rows);
 
-    this.cols =  this.data.length < cs.columns 
-      ? this.data.length 
-      :cs.columns - this.getLeftPadding() - 1; //data.length;
+    this.cols =  this.slicedData.length < cs.columns
+      ? this.slicedData.length 
+      : cs.columns - this.getLeftPadding()
 
     const cc = new ChartChecker(this.priceIncrement);
 
@@ -116,7 +122,7 @@ export class Chart {
     for (let row = 0; row < this.chartS.length; row++) {
       const rowPrice = this.calculateRowPrice(row);
       for (let col = 0; col < this.chartS[row].length; col++) {
-        const columnOHLC = this.data[col];
+        const columnOHLC = this.slicedData[col];
         if(columnOHLC === undefined){
           this.chartS[row][col] = Symbols.empty;
           continue;
