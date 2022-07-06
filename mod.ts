@@ -187,7 +187,7 @@ export class Chart {
   }
 
   /**
-   * 
+   * Returns a string representation of the chart to be used with console.log()
    * @param reCalculate set to true if the chart needs to be re-calculated and re-drawn before.
    */
   public render(reCalculate = false) {
