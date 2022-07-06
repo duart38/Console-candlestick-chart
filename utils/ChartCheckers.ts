@@ -26,16 +26,18 @@ export default class ChartChecker {
     protected bodyBottom(a: number, b: number): number {
         return Math.min(a, b);
     }
-    protected cubeTop(ppq: number){
+    public cubeTop(ppq: number){
         return ppq + this.priceIncrement;
     }
-    protected cubeBottom(ppq: number){
+    public cubeBottom(ppq: number){
         return ppq - this.priceIncrement;
     }
-    public hasDataWithinCube(ppq: number, [,, high, low,]: TOHLC){
+    public hasDataWithinCube(ppq: number, [, open, high, low, close]: TOHLC){
         return (
-            low > this.cubeBottom(ppq) || low < this.cubeTop(ppq) ||
-            high > this.cubeBottom(ppq) || high < this.cubeTop(ppq)
+            (low > this.cubeBottom(ppq) && low < this.cubeTop(ppq)) ||
+            (high > this.cubeBottom(ppq) && high < this.cubeTop(ppq)) ||
+            (open > this.cubeBottom(ppq) && open < this.cubeTop(ppq)) ||
+            (close > this.cubeBottom(ppq) && close < this.cubeTop(ppq))
         );
     }
     public isContainedWithinCube(ppq: number, [,, high, low,]: TOHLC){
@@ -43,6 +45,9 @@ export default class ChartChecker {
             low > this.cubeBottom(ppq) && low < this.cubeTop(ppq) &&
             high > this.cubeBottom(ppq) && high < this.cubeTop(ppq)
         );
+    }
+    public isRequestedWithinCube(ppq: number, request: number){
+        return request >= this.cubeBottom(ppq) && request <= this.cubeTop(ppq);
     }
 
     /**
@@ -83,19 +88,20 @@ export default class ChartChecker {
 
     isWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
         // TODO: only return true if the wick takes up a significant portion of this cube.. otherwise we branch to a different method that gives shorter wick..
+        // contains body.. not wick.
         return (ppq > this.bodyTop(open, close) && ppq <= high) || (ppq < this.bodyBottom(open, close) && ppq >= low);
     }
 
     isShortBottomWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
         if (low === this.bodyBottom(open, close)) return false;
-        const lowIsWithinCube = low < (this.cubeTop(ppq)) && low > (this.cubeBottom(ppq))
+        const lowIsWithinCube = this.isRequestedWithinCube(ppq, low);
         const wickIsHalfRange = (this.cubeTop(ppq)) - low <= this.priceIncrement * 0.5;
         return lowIsWithinCube && wickIsHalfRange;
     }
 
     isShortTopWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
         if (high === this.bodyTop(open, close)) return false;
-        const highIsWithinCube = high < (this.cubeTop(ppq)) && high > (this.cubeBottom(ppq))
+        const highIsWithinCube = this.isRequestedWithinCube(ppq, high)//high < (this.cubeTop(ppq)) && high > (this.cubeBottom(ppq))
         const wickIsHalfRange = high - (this.cubeBottom(ppq)) <= this.priceIncrement * 0.7;
         const isTowardsBottom = (this.cubeTop(ppq)) - high > high - (this.cubeBottom(ppq));
         return highIsWithinCube && wickIsHalfRange && isTowardsBottom;
@@ -114,7 +120,7 @@ export default class ChartChecker {
         const bodyBottom = this.bodyBottom(open, close);
         const distanceBodyTopAndCubeTop = (this.cubeTop(ppq)) - bodyTop;
 
-        const atPrice = high > this.cubeBottom(ppq) && high < this.cubeTop(ppq) && bodyTop < this.cubeTop(ppq);
+        const atPrice = this.isRequestedWithinCube(ppq, high) && bodyTop < this.cubeTop(ppq);
         const wickIsCloseToBodyTop = high - bodyTop <= this.priceIncrement * 0.1;
         const bodyTopIsHalf = distanceBodyTopAndCubeTop >= this.priceIncrement * 0.2 && distanceBodyTopAndCubeTop <= this.priceIncrement * 0.9;
         // check if the bottom is below this cube or very very near to the cube
@@ -134,15 +140,16 @@ export default class ChartChecker {
 
         const atPrice = low > this.cubeBottom(ppq) && low < this.cubeTop(ppq) && bodyBottom < this.cubeTop(ppq);
         const wickIsCloseToBodyBottom = bodyBottom - low <= this.priceIncrement * 0.1;
+        const cubeBelowHasNoWick = low > this.cubeBottom(ppq);
         const bodyBottomIsHalf = distanceBodyBottomAndCubeBottom > this.priceIncrement * 0.2 && distanceBodyBottomAndCubeBottom <= this.priceIncrement * 0.9;
         // check if the bottom is below this cube or very very near to the cube
         const bodyTopIsAboveOrNearCube = bodyTop >= ppq;
 
-        return atPrice && wickIsCloseToBodyBottom && bodyBottomIsHalf && bodyTopIsAboveOrNearCube;
+        return atPrice && cubeBelowHasNoWick && wickIsCloseToBodyBottom && bodyBottomIsHalf && bodyTopIsAboveOrNearCube;
     }
 
-    isNoMovement(ppq: number, [, open, high, low, close]: TOHLC): boolean {
-        return this.hasDataWithinCube(ppq, [0,open,high,low,close]) && open == close && high == low;
+    isNoMovement(ppq: number, [t, open, high, low, close]: TOHLC): boolean {
+        return this.hasDataWithinCube(ppq, [t,open,high,low,close]) && open == close && high == low;
     }
 
 }

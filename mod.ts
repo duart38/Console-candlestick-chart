@@ -117,7 +117,7 @@ export class Chart {
       const rowPrice = this.calculateRowPrice(row);
       for (let col = 0; col < this.chartS[row].length; col++) {
         const columnOHLC = this.data[col];
-        if(columnOHLC === undefined || cc.hasDataWithinCube(rowPrice, columnOHLC) === false){
+        if(columnOHLC === undefined){
           this.chartS[row][col] = Symbols.empty;
           continue;
         }
@@ -137,9 +137,17 @@ export class Chart {
         } else if (cc.isWick(rowPrice, columnOHLC)) {
           this.chartS[row][col] =  colored(Symbols.full_wick);
         } else if (cc.isShortBodyTop(rowPrice, columnOHLC)) {
-          this.chartS[row][col] = colored(Symbols.half_body_top);
+          if(cc.isShortTopWick(cc.cubeTop(rowPrice), columnOHLC)){
+            this.chartS[row][col] = colored(Symbols.body_to_wick_top);
+          }else{
+            this.chartS[row][col] = colored(Symbols.half_body_top);
+          }
         } else if (cc.isShortBodyBottom(rowPrice, columnOHLC)) {
-          this.chartS[row][col] = colored(Symbols.half_body_bottom);
+          if(cc.isShortBottomWick(cc.cubeBottom(rowPrice), columnOHLC)){
+            this.chartS[row][col] = colored(Symbols.body_to_wick_bottom);
+          }else{
+            this.chartS[row][col] = colored(Symbols.half_body_bottom);
+          }
         } else if (cc.isBody(rowPrice, columnOHLC)) {
           this.chartS[row][col] = colored(Symbols.full_body);
         } else if(cc.isContainedWithinCube(rowPrice, columnOHLC)){
