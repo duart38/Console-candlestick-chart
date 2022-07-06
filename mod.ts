@@ -101,7 +101,12 @@ export class Chart {
     return (this.chartS.length - 1 - rowNr) * this.priceIncrement + this.lowest_point;
   }
 
-
+  public chartSize(){
+    return {
+      rows: this.rows,
+      cols: this.cols
+    }
+  }
 
   public render() {
     let chartString = "";
