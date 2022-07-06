@@ -24,14 +24,7 @@ export const Symbols = {
     half_body_top: "╻",
     half_body_bottom: "╹",
     full_body: "┃",
-    star_doji_thick: "┿",
-    star_doji_thin: "┼",
-    gravestone_doji: "┷",
-    dragonfly_doji: "┯",
+    un_classified: "┊",
     no_movement: "⚠", // OHLC are all the same... probably an error?
-    // little_movement: "━",
-    too_granular_top: "╵",
-    too_granular_middle: "━",
-    too_granular_bottom: "╷",
     empty: " ",
 }
