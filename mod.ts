@@ -186,7 +186,12 @@ export class Chart {
     this.beforeRenderCbs.push(cb);
   }
 
-  public render() {
+  /**
+   * 
+   * @param reCalculate set to true if the chart needs to be re-calculated and re-drawn before.
+   */
+  public render(reCalculate = false) {
+    if(reCalculate) this._reCalc();
     let chartString = "";
     // `price incr(${priceIncrement}) - top(${highest_point}) - bottom(${lowest_point})`
     // TODO: Dates, horizontally
@@ -198,4 +203,10 @@ export class Chart {
     }
     return chartString;
   }
+
+
+  public toString = () : string => {
+    return this.render();
+  }
+
 }
