@@ -151,7 +151,7 @@ export class Chart {
         } else if (cc.isTooGranularTop(rowPrice, columnOHLC)) {
           this.chartS[row][col] = colored(Symbols.too_granular_top);
         } else if (cc.isTooGranularBottom(rowPrice, columnOHLC)) {
-          this.chartS[row][col] = Color.bgBlue(colored(Symbols.too_granular_bottom));
+          this.chartS[row][col] =colored(Symbols.too_granular_bottom);
         } // TODO: met for: something is to be rendered (not empty) but did not hit any of our thingies
         else {
           this.chartS[row][col] = Symbols.empty;
