@@ -164,6 +164,10 @@ export class Chart {
     return (this.chartS.length - 1 - rowNr) * this.priceIncrement + this.lowest_point;
   }
 
+  /**
+   * Returns the currently (last) stored rows and columns for this chart.
+   * > NOTE: is not guaranteed to be the actual size of the console.
+   */
   public chartSize(){
     return {
       rows: this.rows,
