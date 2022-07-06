@@ -91,15 +91,14 @@ export class Chart {
 
   private _reCalc(){
     if(this.beforeRenderCbs.length>0) for(const cb of this.beforeRenderCbs) cb();
-    
+
     this.lowest_point = this.data.reduce((prev, curr) => curr[3] < prev ? curr[3] : prev, Infinity);
     this.highest_point = this.data.reduce((prev, curr) => curr[2] > prev ? curr[2] : prev, 0);
 
     // TODO: check if deno is not available.. default to other thing
-    this.rows = Deno.consoleSize(Deno.stdout.rid).rows - 5;
+    this.rows = Deno.consoleSize(Deno.stdout.rid).rows - this.getVerticalPadding();
     this.priceIncrement = ((this.highest_point + 1) - (this.lowest_point - 1)) / (this.rows);
-    const highPointStrLen = this.highest_point.toFixed(2).length;
-    this.cols =  Deno.consoleSize(Deno.stdout.rid).columns - highPointStrLen - 1; //data.length;
+    this.cols =  Deno.consoleSize(Deno.stdout.rid).columns - this.getLeftPadding() - 1; //data.length;
 
     const cc = new ChartChecker(this.priceIncrement);
 
