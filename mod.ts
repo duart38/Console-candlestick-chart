@@ -124,13 +124,7 @@ export class Chart {
         const colored = columnOHLC[1] > columnOHLC[4] ? Color.red :Color. green;
 
         // TODO: split checking up between single block candlestick chekcs and multi-block ones.. (i.e., small doji == one block)
-        if (cc.isStarDoji(rowPrice, columnOHLC)) {
-          this.chartS[row][col] = colored(Symbols.star_doji_thick);
-        } else if (cc.isGraveStoneDoji(rowPrice, columnOHLC)) {
-          this.chartS[row][col] = colored(Symbols.gravestone_doji);
-        } else if (cc.isDragonFlyDoji(rowPrice, columnOHLC)) {
-          this.chartS[row][col] = colored(Symbols.dragonfly_doji);
-        } else if (cc.isNoMovement(rowPrice, columnOHLC)) {
+        if (cc.isNoMovement(rowPrice, columnOHLC)) {
           this.chartS[row][col] = colored(Symbols.no_movement);
         } else if (cc.isShortTopWick(rowPrice, columnOHLC)) {
           this.chartS[row][col] = colored(Symbols.half_wick_top);
@@ -141,18 +135,18 @@ export class Chart {
         } else if (cc.isBottomWick(rowPrice, columnOHLC)) {
           this.chartS[row][col] = colored(Symbols.body_to_wick_bottom);
         } else if (cc.isWick(rowPrice, columnOHLC)) {
-          this.chartS[row][col] = colored(Symbols.full_wick);
+          this.chartS[row][col] =  colored(Symbols.full_wick);
         } else if (cc.isShortBodyTop(rowPrice, columnOHLC)) {
           this.chartS[row][col] = colored(Symbols.half_body_top);
         } else if (cc.isShortBodyBottom(rowPrice, columnOHLC)) {
           this.chartS[row][col] = colored(Symbols.half_body_bottom);
         } else if (cc.isBody(rowPrice, columnOHLC)) {
           this.chartS[row][col] = colored(Symbols.full_body);
-        } else if (cc.isTooGranularTop(rowPrice, columnOHLC)) {
-          this.chartS[row][col] = colored(Symbols.too_granular_top);
-        } else if (cc.isTooGranularBottom(rowPrice, columnOHLC)) {
-          this.chartS[row][col] =colored(Symbols.too_granular_bottom);
-        } // TODO: met for: something is to be rendered (not empty) but did not hit any of our thingies
+        } else if(cc.isContainedWithinCube(rowPrice, columnOHLC)){
+          // the leftovers which have data but was not captured.
+          // TODO: setting to color unclassified separately?
+          this.chartS[row][col] = colored(Symbols.un_classified);
+        }
         else {
           this.chartS[row][col] = Symbols.empty;
         }
@@ -191,6 +185,7 @@ export class Chart {
    * @param reCalculate set to true if the chart needs to be re-calculated and re-drawn before.
    */
   public render(reCalculate = false) {
+    // TODO: pricing on the left seems to be incorrect.. please check
     if(reCalculate) this._reCalc();
     let chartString = "";
     // `price incr(${priceIncrement}) - top(${highest_point}) - bottom(${lowest_point})`
