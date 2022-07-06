@@ -51,7 +51,7 @@ export default class ChartChecker {
         // closing of lower body needs to be BELOW this cube (i.e., not within this cube)
         const bodyLowIsBelowCube = this.bodyBottom(open, close) <= this.cubeBottom(ppq);
 
-        return ppq > this.bodyTop(open, close) && ppq <= high && BodyHighWithinCube && bodyLowIsBelowCube;
+        return ppq > bodyTop && ppq <= high && BodyHighWithinCube && bodyLowIsBelowCube;
     }
 
     /**
@@ -69,7 +69,7 @@ export default class ChartChecker {
         const bodyTopAboveCube = bodyTop > ppq;
         const bodyHalfWayThrough = (this.cubeTop(ppq)) - bodyBottom <= (this.priceIncrement * 0.5);
 
-        return ppq < this.bodyBottom(open, close) && ppq >= low && BodyBottomWithinCube && bodyTopAboveCube && bodyHalfWayThrough;
+        return ppq < bodyBottom && ppq >= low && BodyBottomWithinCube && bodyTopAboveCube && bodyHalfWayThrough;
     }
 
     isWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
@@ -132,32 +132,29 @@ export default class ChartChecker {
     }
 
     isNoMovement(ppq: number, [, open, high, low, close]: TOHLC): boolean {
-        const atPrice = low > this.cubeBottom(ppq) && high < this.cubeTop(ppq);
-        return atPrice && open == close && high == low;
+        return this.hasDataWithinCube(ppq, [0,open,high,low,close]) && open == close && high == low;
     }
 
     isTooGranularTop(ppq: number, [, open, high, low, close]: TOHLC): boolean {
         // TODO: top(▔), bottom(▁), middle(━) granularity
-        const atPrice = low > this.cubeBottom(ppq) && high < this.cubeTop(ppq);
         if(this.bodyTop(open, close) > this.cubeTop(ppq) || this.bodyBottom(open, close) < this.cubeBottom(ppq)) return false;
 
         // is it only going to take up one cube??
         const candleTooGranular = high - low > 0 && high - low < this.priceIncrement * 0.1;
         const closerToTop = (this.cubeTop(ppq)) - high < low - (this.cubeBottom(ppq));
 
-        return atPrice && candleTooGranular && closerToTop;
+        return this.hasDataWithinCube(ppq, [0,open,high,low,close]) && candleTooGranular && closerToTop;
     }
     // TODO: one of these does not work.. theres one of each on top on one another.. maybe only work with bodies?
     isTooGranularBottom(ppq: number, [, open, high, low, close]: TOHLC): boolean {
         // TODO: top(▔), bottom(▁), middle(━) granularity
-        const atPrice = low > this.cubeBottom(ppq) && high < this.cubeTop(ppq);
         if(this.bodyTop(open, close) > this.cubeTop(ppq) || this.bodyBottom(open, close) < this.cubeBottom(ppq)) return false;
 
         // is it only going to take up one cube??
         const candleTooGranular = high - low > 0 && high - low < this.priceIncrement * 0.1;
         const closerToBottom = low - (this.cubeBottom(ppq)) < (this.cubeTop(ppq)) - high;
 
-        return atPrice && candleTooGranular && closerToBottom;
+        return this.hasDataWithinCube(ppq, [0,open,high,low,close]) && candleTooGranular && closerToBottom;
     }
 
 
