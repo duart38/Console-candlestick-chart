@@ -63,7 +63,7 @@ export class Chart {
   }
 
   private getLeftPadding(){
-    return this.highest_point.toFixed(2).length;
+    return this.highest_point.toFixed(2).length + 2;
   }
   private getVerticalPadding(){
     return 5; // TODO: figure this one out
