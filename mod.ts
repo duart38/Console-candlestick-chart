@@ -38,7 +38,8 @@ export class Chart {
     // TODO: check if deno is not available.. default to other thing
     this.rows = Deno.consoleSize(Deno.stdout.rid).rows - 5;
     this.priceIncrement = ((this.highest_point + 1) - (this.lowest_point - 1)) / (this.rows);
-    this.cols = data.length;
+    const highPointStrLen = this.highest_point.toFixed(2).length;
+    this.cols =  Deno.consoleSize(Deno.stdout.rid).columns - highPointStrLen - 1; //data.length;
 
     const cc = new ChartChecker(this.priceIncrement);
 
@@ -53,6 +54,10 @@ export class Chart {
       const rowPrice = this.calculateRowPrice(row);
       for (let col = 0; col < this.chartS[row].length; col++) { // TODO: maybe a safer approach would be to check against data.length
         const columnOHLC = data[col];
+        if(columnOHLC === undefined){
+          this.chartS[row][col] = Symbols.empty;
+          continue;
+        }
         const colored = columnOHLC[1] > columnOHLC[4] ? Color.red :Color. green;
         // TODO: check if within range here to avoid re-calculating it in every method
 
@@ -95,6 +100,8 @@ export class Chart {
   private calculateRowPrice(rowNr: number) {
     return (this.chartS.length - 1 - rowNr) * this.priceIncrement + this.lowest_point;
   }
+
+
 
   public render() {
     let chartString = "";
