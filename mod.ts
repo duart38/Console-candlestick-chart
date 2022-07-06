@@ -22,16 +22,20 @@ import { Symbols } from "./utils/Symbols.ts";
 
 
 export class Chart {
-  public lowest_point: number;
-  public highest_point: number;
-  public priceIncrement: number;
-  private rows: number;
-  private cols: number;
-  private chartS: Array<Array<string>>;
+  public lowest_point = 0;
+  public highest_point = 0;
+  public priceIncrement = 0;
+  private rows = 0;
+  private cols = 0;
+  private chartS: Array<Array<string>> = [];
 
   // TODO: options to pass in custom Symbols etc
   constructor(public data: Array<TOHLC>) {
+    this._reCalc(data);
+  }
 
+  private _reCalc(data: Array<TOHLC>){
+    this.data = data;
     this.lowest_point = data.reduce((prev, curr) => curr[3] < prev ? curr[3] : prev, Infinity);
     this.highest_point = data.reduce((prev, curr) => curr[2] > prev ? curr[2] : prev, 0);
 
