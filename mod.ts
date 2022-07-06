@@ -23,9 +23,15 @@ import { Symbols } from "./utils/Symbols.ts";
 
 export type SIGWINCH_CB = (newSize: {rows: number, cols: number})=>void;
 export type TChartOptions = {
+  listenForSIGWINCH: boolean,
+  /**
+   * Indicates if the logic should change the rows and columns when the console size changes.
+   * > Does not do anything unless listenForSIGWINCH is set to true
+   */
   changeInternalSizeOnSigwinch: boolean,
 }
 export const ChartOptions: TChartOptions = {
+  listenForSIGWINCH: true,
   changeInternalSizeOnSigwinch: false,
 }
 
@@ -43,6 +49,7 @@ export class Chart {
   // TODO: options to pass in custom Symbols etc
   constructor(public data: Array<TOHLC>, private options = ChartOptions) {
     this._reCalc(data);
+    this._registerSIGWINCHEvent();
   }
 
   private getLeftPadding(){
@@ -53,6 +60,7 @@ export class Chart {
   }
 
   private _registerSIGWINCHEvent() {
+    if(this.options.listenForSIGWINCH === false) return;
     Deno.addSignalListener("SIGWINCH", ()=>{
       let {rows, columns} = Deno.consoleSize(Deno.stdout.rid)//.rows - 5
       rows -= this.getVerticalPadding();
@@ -69,6 +77,7 @@ export class Chart {
       if(this.sizeChangeCbs.length === 0) return;
       for(const cb of this.sizeChangeCbs) cb({rows, cols: columns})
     });
+    setInterval(()=>{}, 10^10)
   }
 
   private _reCalc(data: Array<TOHLC>){
