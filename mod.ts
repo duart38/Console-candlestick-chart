@@ -115,7 +115,7 @@ export class Chart {
 
     for (let row = 0; row < this.chartS.length; row++) {
       const rowPrice = this.calculateRowPrice(row);
-      for (let col = 0; col < this.chartS[row].length; col++) { // TODO: maybe a safer approach would be to check against data.length
+      for (let col = 0; col < this.chartS[row].length; col++) {
         const columnOHLC = this.data[col];
         if(columnOHLC === undefined){
           this.chartS[row][col] = Symbols.empty;
