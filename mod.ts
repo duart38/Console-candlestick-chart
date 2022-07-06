@@ -95,10 +95,14 @@ export class Chart {
     this.lowest_point = this.data.reduce((prev, curr) => curr[3] < prev ? curr[3] : prev, Infinity);
     this.highest_point = this.data.reduce((prev, curr) => curr[2] > prev ? curr[2] : prev, 0);
 
+    const cs = Deno.consoleSize(Deno.stdout.rid);
     // TODO: check if deno is not available.. default to other thing
-    this.rows = Deno.consoleSize(Deno.stdout.rid).rows - this.getVerticalPadding();
+    this.rows = cs.rows - this.getVerticalPadding();
     this.priceIncrement = ((this.highest_point + 1) - (this.lowest_point - 1)) / (this.rows);
-    this.cols =  Deno.consoleSize(Deno.stdout.rid).columns - this.getLeftPadding() - 1; //data.length;
+
+    this.cols =  this.data.length < cs.columns 
+      ? this.data.length 
+      :cs.columns - this.getLeftPadding() - 1; //data.length;
 
     const cc = new ChartChecker(this.priceIncrement);
 
