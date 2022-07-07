@@ -5,7 +5,7 @@
 - Customizable symbols
 - Ability to change candle color (e.g., when a pattern is to be displayed in the terminal)
 
-<img src="showcase1.png" />
+<img src="https://github.com/duart38/Console-candlestick-chart/raw/0.0.1/showcase1.png" />
 
 ## Example usage
 ```TypeScript
