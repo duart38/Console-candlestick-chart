@@ -16,10 +16,14 @@
  */
 
 import { TOHLC } from "../interfaces/OHLC.ts";
+import { Symbols } from "../utils/Symbols.ts";
 
 export class Candle {
-    constructor(public data: TOHLC){ 
-        console.log(this.bodyTop)
+    public segments: string[] = [];
+    constructor(public data: TOHLC){ }
+
+    resizeSegmentList(newSize: number){
+        this.segments = new Array(newSize).fill(Symbols.empty);
     }
   
     get timestamp(){return this.data[0];}

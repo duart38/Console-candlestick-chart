@@ -109,6 +109,8 @@ export class Chart {
     this.rows = cs.rows - this.getVerticalPadding();
     this.priceIncrement = ((this.highest_point + 1) - (this.lowest_point - 1)) / (this.rows);
 
+    this.slicedData.forEach((c)=>c.resizeSegmentList(this.rows));
+
     this.cols =  this.slicedData.length < cs.columns
       ? this.slicedData.length 
       : cs.columns - this.getLeftPadding()
@@ -127,45 +129,46 @@ export class Chart {
       for (let col = 0; col < this.chartS[row].length; col++) {
         const currentCandle = this.slicedData[col];
         if(currentCandle === undefined || currentCandle.isValid() === false){
-          this.chartS[row][col] = Symbols.empty;
+          currentCandle.segments[row] = Symbols.empty;
           continue;
         }
         const colored = currentCandle.isBearish() ? Color.red :Color.green;
 
         // TODO: split checking up between single block candlestick chekcs and multi-block ones.. (i.e., small doji == one block)
         if (cc.isNoMovement(rowPrice, currentCandle)) {
-          this.chartS[row][col] = colored(Symbols.no_movement);
+          // this.chartS[row][col] _= colored(Symbols.no_movement);
+          currentCandle.segments[row] = colored(Symbols.no_movement);
         } else if (cc.isShortTopWick(rowPrice, currentCandle)) {
-          this.chartS[row][col] = colored(Symbols.half_wick_top);
+          currentCandle.segments[row] = colored(Symbols.half_wick_top);
         } else if (cc.isTopWick(rowPrice, currentCandle)) {
-          this.chartS[row][col] = colored(Symbols.body_to_wick_top);
+          currentCandle.segments[row] = colored(Symbols.body_to_wick_top);
         } else if (cc.isShortBottomWick(rowPrice, currentCandle)) {
-          this.chartS[row][col] = colored(Symbols.half_wick_bottom);
+          currentCandle.segments[row] = colored(Symbols.half_wick_bottom);
         } else if (cc.isBottomWick(rowPrice, currentCandle)) {
-          this.chartS[row][col] = colored(Symbols.body_to_wick_bottom);
+          currentCandle.segments[row] = colored(Symbols.body_to_wick_bottom);
         } else if (cc.isWick(rowPrice, currentCandle)) {
-          this.chartS[row][col] =  colored(Symbols.full_wick);
+          currentCandle.segments[row] =  colored(Symbols.full_wick);
         } else if (cc.isShortBodyTop(rowPrice, currentCandle)) {
           if(cc.isShortTopWick(cc.cubeTop(rowPrice), currentCandle)){
-            this.chartS[row][col] = colored(Symbols.body_to_wick_top);
+            currentCandle.segments[row] = colored(Symbols.body_to_wick_top);
           }else{
-            this.chartS[row][col] = colored(Symbols.half_body_top);
+            currentCandle.segments[row] = colored(Symbols.half_body_top);
           }
         } else if (cc.isShortBodyBottom(rowPrice, currentCandle)) {
           if(cc.isShortBottomWick(cc.cubeBottom(rowPrice), currentCandle)){
-            this.chartS[row][col] = colored(Symbols.body_to_wick_bottom);
+            currentCandle.segments[row] = colored(Symbols.body_to_wick_bottom);
           }else{
-            this.chartS[row][col] = colored(Symbols.half_body_bottom);
+            currentCandle.segments[row] = colored(Symbols.half_body_bottom);
           }
         } else if (cc.isBody(rowPrice, currentCandle)) {
-          this.chartS[row][col] = colored(Symbols.full_body);
+          currentCandle.segments[row] = colored(Symbols.full_body);
         } else if(cc.isContainedWithinCube(rowPrice, currentCandle)){
           // the leftovers which have data but was not captured.
           // TODO: setting to color unclassified separately?
-          this.chartS[row][col] = colored(Symbols.un_classified);
+          currentCandle.segments[row] = colored(Symbols.un_classified);
         }
         else {
-          this.chartS[row][col] = Symbols.empty;
+          currentCandle.segments[row] = Symbols.empty;
         }
       }
     }
@@ -208,10 +211,15 @@ export class Chart {
     // `price incr(${priceIncrement}) - top(${highest_point}) - bottom(${lowest_point})`
     // TODO: Dates, horizontally
 
-    for (let row = 0; row < this.chartS.length; row++) {
+    for(let row = 0; row < this.rows; row++){
       const rowPrice = this.calculateRowPrice(row);
-      const rowPriceForChart = rowPrice.toFixed(2).toString().padStart(this.highest_point.toString().length)
-      chartString += rowPriceForChart + "├" + this.chartS[row].join("") + "\n";
+      const rowPriceForChart = rowPrice.toFixed(2).toString().padStart(this.highest_point.toString().length);
+      chartString += rowPriceForChart + "├"
+      for(let col = 0; col < this.cols; col++){
+        const candle = this.slicedData[col];
+        chartString += candle.segments[row] //+ "\n";
+      }
+      chartString += "\n"
     }
     return chartString;
   }
