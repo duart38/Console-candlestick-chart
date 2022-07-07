@@ -130,7 +130,7 @@ export class Chart {
           this.chartS[row][col] = Symbols.empty;
           continue;
         }
-        const colored = currentCandle.isBearish() ? Color.red :Color. green;
+        const colored = currentCandle.isBearish() ? Color.red :Color.green;
 
         // TODO: split checking up between single block candlestick chekcs and multi-block ones.. (i.e., small doji == one block)
         if (cc.isNoMovement(rowPrice, currentCandle)) {
