@@ -21,12 +21,7 @@ import { TOHLC } from "../interfaces/OHLC.ts";
 export default class ChartChecker {
     constructor(public priceIncrement: number) { }
 
-    protected bodyTop(a: number, b: number): number {
-        return Math.max(a, b);
-    }
-    protected bodyBottom(a: number, b: number): number {
-        return Math.min(a, b);
-    }
+
     public cubeTop(ppq: number){
         return ppq + this.priceIncrement;
     }
@@ -58,13 +53,13 @@ export default class ChartChecker {
      */
     isTopWick(ppq: number, candle: Candle): boolean {
         // TODO: early escape if one or more conditions not met.
-        const bodyTop = this.bodyTop(candle.open, candle.close);
+        const bodyTop = candle.bodyTop;
         // top of body within the block
         const BodyHighWithinCube = bodyTop > this.cubeBottom(ppq) && bodyTop <= this.cubeTop(ppq);
         // ensure a little bit of body
         const bodyHighHalfWayThrough = this.cubeTop(ppq) - bodyTop >= this.priceIncrement*0.2;
         // closing of lower body needs to be BELOW this cube (i.e., not within this cube)
-        const bodyLowIsBelowCube = this.bodyBottom(candle.open, candle.close) <= ppq;
+        const bodyLowIsBelowCube = candle.bodyBottom <= ppq;
 
         return ppq > bodyTop && ppq <= candle.high && BodyHighWithinCube && bodyLowIsBelowCube && bodyHighHalfWayThrough;
     }
@@ -74,34 +69,34 @@ export default class ChartChecker {
      * @param ppq price position query to check against
      * @param param1 single OHLC data
      */
-    isBottomWick(ppq: number, {open, low, close}: Candle): boolean {
+    isBottomWick(ppq: number, {low, bodyBottom, bodyTop}: Candle): boolean {
         // TODO: early escape if one or more conditions not met.
-        const bodyBottom = this.bodyBottom(open, close);
-        const bodyTop = this.bodyTop(open, close);
+        const _bodyBottom = bodyBottom;
+        const _bodyTop = bodyTop;
 
         // bottom of body within the block but only till halfway through this block.
-        const BodyBottomWithinCube = bodyBottom >= (this.cubeBottom(ppq)) && bodyBottom < (this.cubeTop(ppq));
-        const bodyTopAboveCube = bodyTop > ppq;
-        const bodyHalfWayThrough = (this.cubeTop(ppq)) - bodyBottom <= (this.priceIncrement * 0.8);
+        const BodyBottomWithinCube = _bodyBottom >= (this.cubeBottom(ppq)) && _bodyBottom < (this.cubeTop(ppq));
+        const bodyTopAboveCube = _bodyTop > ppq;
+        const bodyHalfWayThrough = (this.cubeTop(ppq)) - _bodyBottom <= (this.priceIncrement * 0.8);
 
-        return ppq < bodyBottom && ppq >= low && BodyBottomWithinCube && bodyTopAboveCube && bodyHalfWayThrough;
+        return ppq < _bodyBottom && ppq >= low && BodyBottomWithinCube && bodyTopAboveCube && bodyHalfWayThrough;
     }
 
-    isWick(ppq: number, {open, high, low, close}: Candle): boolean {
+    isWick(ppq: number, {high, low, bodyTop, bodyBottom}: Candle): boolean {
         // TODO: only return true if the wick takes up a significant portion of this cube.. otherwise we branch to a different method that gives shorter wick..
         // contains body.. not wick.
-        return (ppq > this.bodyTop(open, close) && ppq <= high) || (ppq < this.bodyBottom(open, close) && ppq >= low);
+        return (ppq > bodyTop && ppq <= high) || (ppq < bodyBottom && ppq >= low);
     }
 
-    isShortBottomWick(ppq: number, {open, low, close}: Candle): boolean {
-        if (low === this.bodyBottom(open, close)) return false;
+    isShortBottomWick(ppq: number, {low, bodyBottom}: Candle): boolean {
+        if (low === bodyBottom) return false;
         const lowIsWithinCube = this.isRequestedWithinCube(ppq, low);
         const wickIsHalfRange = (this.cubeTop(ppq)) - low <= this.priceIncrement * 0.5;
         return lowIsWithinCube && wickIsHalfRange;
     }
 
-    isShortTopWick(ppq: number, {open, high, close}: Candle): boolean {
-        if (high === this.bodyTop(open, close)) return false;
+    isShortTopWick(ppq: number, {high, bodyTop}: Candle): boolean {
+        if (high === bodyTop) return false;
         const highIsWithinCube = this.isRequestedWithinCube(ppq, high);
         const wickIsHalfRange = high - (this.cubeBottom(ppq)) <= this.priceIncrement * 0.7;
         const isTowardsBottom = (this.cubeTop(ppq)) - high > high - (this.cubeBottom(ppq));
@@ -112,17 +107,16 @@ export default class ChartChecker {
      * @param ppq price position query to check against
      * @param param1 single OHLC data
      */
-    isBody(ppq: number, {open, close}: Candle): boolean {
-        return ppq >= this.bodyBottom(open, close) && ppq <= this.bodyTop(open, close)
+    isBody(ppq: number, {bodyBottom, bodyTop}: Candle): boolean {
+        return ppq >= bodyBottom && ppq <= bodyTop
     }
 
-    isShortBodyTop(ppq: number, {open, high, close}: Candle): boolean { // ╻
-        const bodyTop = this.bodyTop(open, close);
-        const bodyBottom = this.bodyBottom(open, close);
-        const distanceBodyTopAndCubeTop = (this.cubeTop(ppq)) - bodyTop;
+    isShortBodyTop(ppq: number, {high, bodyTop, bodyBottom}: Candle): boolean { // ╻
+        const _bodyTop = bodyTop;
+        const distanceBodyTopAndCubeTop = (this.cubeTop(ppq)) - _bodyTop;
 
-        const atPrice = this.isRequestedWithinCube(ppq, high) && bodyTop < this.cubeTop(ppq);
-        const wickIsCloseToBodyTop = high - bodyTop <= this.priceIncrement * 0.1;
+        const atPrice = this.isRequestedWithinCube(ppq, high) && _bodyTop < this.cubeTop(ppq);
+        const wickIsCloseToBodyTop = high - _bodyTop <= this.priceIncrement * 0.1;
         const bodyTopIsHalf = distanceBodyTopAndCubeTop >= this.priceIncrement * 0.2 && distanceBodyTopAndCubeTop <= this.priceIncrement * 0.9;
         // check if the bottom is below this cube or very very near to the cube
         const bodyBottomIsBelowOrNearCube = bodyBottom <= ppq;
@@ -130,21 +124,19 @@ export default class ChartChecker {
         return atPrice && wickIsCloseToBodyTop && bodyTopIsHalf && bodyBottomIsBelowOrNearCube;
     }
 
-    isShortBodyBottom(ppq: number, {open, low, close}: Candle): boolean {
+    isShortBodyBottom(ppq: number, {low, bodyTop, bodyBottom}: Candle): boolean {
         // TODO.. can only occur if the wick is within 0.1 percent distance from the body at the bottom meaning we dont show it.
         // ofc top needs to be within the cube and take about 50% of the cube or less (>= 10%)
         // +1: see above for the opposite.
+        const _bodyBottom = bodyBottom;
+        const distanceBodyBottomAndCubeBottom = _bodyBottom - (this.cubeBottom(ppq));
 
-        const bodyTop = this.bodyTop(open, close);
-        const bodyBottom = this.bodyBottom(open, close);
-        const distanceBodyBottomAndCubeBottom = bodyBottom - (this.cubeBottom(ppq));
-
-        const atPrice = low > this.cubeBottom(ppq) && low < this.cubeTop(ppq) && bodyBottom < this.cubeTop(ppq);
-        const wickIsCloseToBodyBottom = bodyBottom - low <= this.priceIncrement * 0.1;
+        const atPrice = low > this.cubeBottom(ppq) && low < this.cubeTop(ppq) && _bodyBottom < this.cubeTop(ppq);
+        const wickIsCloseToBodyBottom = _bodyBottom - low <= this.priceIncrement * 0.1;
         const cubeBelowHasNoWick = low > this.cubeBottom(ppq);
         const bodyBottomIsHalf = distanceBodyBottomAndCubeBottom > this.priceIncrement * 0.2 && distanceBodyBottomAndCubeBottom <= this.priceIncrement * 0.9;
         // check if the bottom is below this cube or very very near to the cube
-        const bodyTopIsAboveOrNearCube = bodyTop >= ppq;
+        const bodyTopIsAboveOrNearCube =  bodyTop >= ppq;
 
         return atPrice && cubeBelowHasNoWick && wickIsCloseToBodyBottom && bodyBottomIsHalf && bodyTopIsAboveOrNearCube;
     }
