@@ -95,7 +95,6 @@ export class Chart {
   }
 
   private _reCalc(){
-    if(this.beforeRenderCbs.length>0) for(const cb of this.beforeRenderCbs) cb();
 
     // TODO: check if deno is not available.. default to other thing
     const cs = Deno.consoleSize(Deno.stdout.rid);
@@ -199,6 +198,7 @@ export class Chart {
   public render(reCalculate = false) {
     // TODO: pricing on the left seems to be incorrect.. please check
     if(reCalculate) this._reCalc();
+    if(this.beforeRenderCbs.length>0) for(const cb of this.beforeRenderCbs) cb();
     let chartString = "";
     // `price incr(${priceIncrement}) - top(${highest_point}) - bottom(${lowest_point})`
     // TODO: Dates, horizontally
