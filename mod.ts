@@ -53,7 +53,6 @@ export class Chart {
   private rows = 0;
   private cols = 0;
 
-  private chartS: Array<Array<string>> = [];
   private sizeChangeCbs: SIGWINCH_CB[] = [];
   private beforeRenderCbs: (()=>void)[] = [];
 
@@ -117,16 +116,9 @@ export class Chart {
 
     const cc = new ChartChecker(this.priceIncrement);
 
-    this.chartS = new Array(this.rows + 1);
-    for (let c = 0; c < this.chartS.length; c++) {
-      this.chartS[c] = new Array(this.cols).fill(Symbols.empty);
-    }
-
-
-
-    for (let row = 0; row < this.chartS.length; row++) {
+    for (let row = 0; row < this.rows; row++) {
       const rowPrice = this.calculateRowPrice(row);
-      for (let col = 0; col < this.chartS[row].length; col++) {
+      for (let col = 0; col < this.cols; col++) {
         const currentCandle = this.slicedData[col];
         if(currentCandle === undefined || currentCandle.isValid() === false){
           currentCandle.segments[row] = Symbols.empty;
@@ -175,7 +167,7 @@ export class Chart {
   }
 
   private calculateRowPrice(rowNr: number) {
-    return (this.chartS.length - 1 - rowNr) * this.priceIncrement + this.lowest_point;
+    return (this.rows - 1 - rowNr) * this.priceIncrement + this.lowest_point;
   }
 
   /**
