@@ -117,7 +117,6 @@ export class Chart {
       : cs.columns - this.getLeftPadding()
 
     const cc = new ChartChecker(this.priceIncrement);
-    console.log(this.lowest_point, this.highest_point, this.priceIncrement)
 
 
     for (let row = 0; row < this.rows+1; row++) {
