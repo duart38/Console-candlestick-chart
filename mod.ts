@@ -104,10 +104,12 @@ export class Chart {
     this.lowest_point = this.slicedData.reduce((prev, curr) => curr.low < prev ? curr.low : prev, Infinity);
     this.highest_point = this.slicedData.reduce((prev, curr) => curr.high > prev ? curr.high : prev, 0);
 
+    const prevRows = this.rows;
     this.rows = cs.rows - this.getVerticalPadding();
     this.priceIncrement = ((this.highest_point + 1) - (this.lowest_point - 1)) / (this.rows);
-
-    this.slicedData.forEach((c)=>c.resizeSegmentList(this.rows));
+    // check and resize array if required. clear if not.
+    if(this.rows !== prevRows) this.slicedData.forEach((c)=>c.resizeSegmentList(this.rows));
+    else this.slicedData.forEach(c=>c.clearSegments());
 
     this.cols =  this.slicedData.length < cs.columns
       ? this.slicedData.length 
