@@ -126,7 +126,7 @@ export class Chart {
       const rowPrice = this.calculateRowPrice(row);
       for (let col = 0; col < this.chartS[row].length; col++) {
         const currentCandle = this.slicedData[col];
-        if(currentCandle === undefined){
+        if(currentCandle === undefined || currentCandle.isValid() === false){
           this.chartS[row][col] = Symbols.empty;
           continue;
         }
