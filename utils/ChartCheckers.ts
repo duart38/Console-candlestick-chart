@@ -16,7 +16,6 @@
  */
 
 import { Candle } from "../components/Candle.ts";
-import { TOHLC } from "../interfaces/OHLC.ts";
 
 export default class ChartChecker {
     constructor(public priceIncrement: number) { }
