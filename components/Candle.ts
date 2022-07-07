@@ -28,4 +28,9 @@ export class Candle {
   
     isBearish(){return this.open > this.close}
     isBullish(){return !this.isBearish}
+
+    bodyBottom(){return Math.min(this.open, this.close);}
+    bodyTop(){return Math.max(this.open, this.close);}
+    wickBottom(){return Math.min(this.high, this.low);}
+    wickTop(){return Math.max(this.high, this.low);}
 }
