@@ -104,6 +104,7 @@ export class Chart {
     this.lowest_point = this.slicedData.reduce((prev, curr) => curr.low < prev ? curr.low : prev, Infinity);
     this.highest_point = this.slicedData.reduce((prev, curr) => curr.high > prev ? curr.high : prev, 0);
 
+
     const prevRows = this.rows;
     this.rows = cs.rows - this.getVerticalPadding();
     this.priceIncrement = ((this.highest_point + 1) - (this.lowest_point - 1)) / (this.rows);
@@ -116,8 +117,10 @@ export class Chart {
       : cs.columns - this.getLeftPadding()
 
     const cc = new ChartChecker(this.priceIncrement);
+    console.log(this.lowest_point, this.highest_point, this.priceIncrement)
 
-    for (let row = 0; row < this.rows; row++) {
+
+    for (let row = 0; row < this.rows+1; row++) {
       const rowPrice = this.calculateRowPrice(row);
       for (let col = 0; col < this.cols; col++) {
         const currentCandle = this.slicedData[col];
@@ -168,7 +171,7 @@ export class Chart {
   }
 
   private calculateRowPrice(rowNr: number) {
-    return (this.rows - 1 - rowNr) * this.priceIncrement + this.lowest_point;
+    return (this.rows - rowNr) * this.priceIncrement + this.lowest_point;
   }
 
   /**
@@ -205,7 +208,7 @@ export class Chart {
     // `price incr(${priceIncrement}) - top(${highest_point}) - bottom(${lowest_point})`
     // TODO: Dates, horizontally
 
-    for(let row = 0; row < this.rows; row++){
+    for(let row = 0; row < this.rows+1; row++){
       const rowPrice = this.calculateRowPrice(row);
       const rowPriceForChart = rowPrice.toFixed(2).toString().padStart(this.highest_point.toString().length);
       chartString += rowPriceForChart + "├"
