@@ -19,6 +19,16 @@ import { TOHLC } from "../interfaces/OHLC.ts";
 import { Symbols } from "../utils/Symbols.ts";
 
 export class Candle {
+    /**
+     * Represent all symbols of this candle from top to bottom.
+     * Example below:
+     * ```
+     * 0: ╽
+     * 1: ┃
+     * 2: ╿
+     * ```
+     * > index represents row numbers, for column position of the (entire) candle refer to the order the candles are stored in.
+     */
     public segments: string[] = [];
     constructor(public data: TOHLC){ }
 
