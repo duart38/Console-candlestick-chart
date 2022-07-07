@@ -35,6 +35,9 @@ export class Candle {
     resizeSegmentList(newSize: number){
         this.segments = new Array(newSize).fill(Symbols.empty);
     }
+    clearSegments(){
+        this.segments.fill(Symbols.empty);
+    }
   
     get timestamp(){return this.data[0];}
     get open(){return this.data[1];}
