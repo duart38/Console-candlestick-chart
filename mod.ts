@@ -219,6 +219,13 @@ export class Chart {
   }
 
 
+  /**
+   * Returns a list of the candles, in order, that can be seen on screen (off-screen candles are not included)
+   */
+  public getActiveCandles(){
+    return this.slicedData;
+  }
+
   public toString = () : string => {
     return this.render();
   }
