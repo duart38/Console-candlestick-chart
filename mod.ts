@@ -15,6 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { Candle } from "./components/Candle.ts";
 import { TOHLC } from "./interfaces/OHLC.ts";
 import { Color } from "./utils/ANSI.ts";
 import ChartChecker from "./utils/ChartCheckers.ts";
@@ -56,11 +57,13 @@ export class Chart {
   private sizeChangeCbs: SIGWINCH_CB[] = [];
   private beforeRenderCbs: (()=>void)[] = [];
 
-  private slicedData: Array<TOHLC>;
+  public data: Array<Candle>;
+  private slicedData: Array<Candle>;
 
   // TODO: options to pass in custom Symbols etc
-  constructor(public data: Array<TOHLC>, private options = ChartOptions) {
-    this.slicedData = data;
+  constructor(data: Array<TOHLC>, private options = ChartOptions) {
+    this.data = data.map(_=>new Candle(_));
+    this.slicedData = this.data;
     this._reCalc();
     this._registerSIGWINCHEvent();
   }
@@ -100,8 +103,8 @@ export class Chart {
     // cut up data to only show newest items based on the width of the console.
     this.slicedData = this.data.slice(-(cs.columns) - this.getLeftPadding());
 
-    this.lowest_point = this.slicedData.reduce((prev, curr) => curr[3] < prev ? curr[3] : prev, Infinity);
-    this.highest_point = this.slicedData.reduce((prev, curr) => curr[2] > prev ? curr[2] : prev, 0);
+    this.lowest_point = this.slicedData.reduce((prev, curr) => curr.low < prev ? curr.low : prev, Infinity);
+    this.highest_point = this.slicedData.reduce((prev, curr) => curr.high > prev ? curr.high : prev, 0);
 
     this.rows = cs.rows - this.getVerticalPadding();
     this.priceIncrement = ((this.highest_point + 1) - (this.lowest_point - 1)) / (this.rows);
@@ -122,41 +125,41 @@ export class Chart {
     for (let row = 0; row < this.chartS.length; row++) {
       const rowPrice = this.calculateRowPrice(row);
       for (let col = 0; col < this.chartS[row].length; col++) {
-        const columnOHLC = this.slicedData[col];
-        if(columnOHLC === undefined){
+        const currentCandle = this.slicedData[col];
+        if(currentCandle === undefined){
           this.chartS[row][col] = Symbols.empty;
           continue;
         }
-        const colored = columnOHLC[1] > columnOHLC[4] ? Color.red :Color. green;
+        const colored = currentCandle.isBearish() ? Color.red :Color. green;
 
         // TODO: split checking up between single block candlestick chekcs and multi-block ones.. (i.e., small doji == one block)
-        if (cc.isNoMovement(rowPrice, columnOHLC)) {
+        if (cc.isNoMovement(rowPrice, currentCandle)) {
           this.chartS[row][col] = colored(Symbols.no_movement);
-        } else if (cc.isShortTopWick(rowPrice, columnOHLC)) {
+        } else if (cc.isShortTopWick(rowPrice, currentCandle)) {
           this.chartS[row][col] = colored(Symbols.half_wick_top);
-        } else if (cc.isTopWick(rowPrice, columnOHLC)) {
+        } else if (cc.isTopWick(rowPrice, currentCandle)) {
           this.chartS[row][col] = colored(Symbols.body_to_wick_top);
-        } else if (cc.isShortBottomWick(rowPrice, columnOHLC)) {
+        } else if (cc.isShortBottomWick(rowPrice, currentCandle)) {
           this.chartS[row][col] = colored(Symbols.half_wick_bottom);
-        } else if (cc.isBottomWick(rowPrice, columnOHLC)) {
+        } else if (cc.isBottomWick(rowPrice, currentCandle)) {
           this.chartS[row][col] = colored(Symbols.body_to_wick_bottom);
-        } else if (cc.isWick(rowPrice, columnOHLC)) {
+        } else if (cc.isWick(rowPrice, currentCandle)) {
           this.chartS[row][col] =  colored(Symbols.full_wick);
-        } else if (cc.isShortBodyTop(rowPrice, columnOHLC)) {
-          if(cc.isShortTopWick(cc.cubeTop(rowPrice), columnOHLC)){
+        } else if (cc.isShortBodyTop(rowPrice, currentCandle)) {
+          if(cc.isShortTopWick(cc.cubeTop(rowPrice), currentCandle)){
             this.chartS[row][col] = colored(Symbols.body_to_wick_top);
           }else{
             this.chartS[row][col] = colored(Symbols.half_body_top);
           }
-        } else if (cc.isShortBodyBottom(rowPrice, columnOHLC)) {
-          if(cc.isShortBottomWick(cc.cubeBottom(rowPrice), columnOHLC)){
+        } else if (cc.isShortBodyBottom(rowPrice, currentCandle)) {
+          if(cc.isShortBottomWick(cc.cubeBottom(rowPrice), currentCandle)){
             this.chartS[row][col] = colored(Symbols.body_to_wick_bottom);
           }else{
             this.chartS[row][col] = colored(Symbols.half_body_bottom);
           }
-        } else if (cc.isBody(rowPrice, columnOHLC)) {
+        } else if (cc.isBody(rowPrice, currentCandle)) {
           this.chartS[row][col] = colored(Symbols.full_body);
-        } else if(cc.isContainedWithinCube(rowPrice, columnOHLC)){
+        } else if(cc.isContainedWithinCube(rowPrice, currentCandle)){
           // the leftovers which have data but was not captured.
           // TODO: setting to color unclassified separately?
           this.chartS[row][col] = colored(Symbols.un_classified);

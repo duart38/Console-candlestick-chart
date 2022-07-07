@@ -15,6 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { Candle } from "../components/Candle.ts";
 import { TOHLC } from "../interfaces/OHLC.ts";
 
 export default class ChartChecker {
@@ -32,7 +33,7 @@ export default class ChartChecker {
     public cubeBottom(ppq: number){
         return ppq - this.priceIncrement;
     }
-    public hasDataWithinCube(ppq: number, [, open, high, low, close]: TOHLC){
+    public hasDataWithinCube(ppq: number, {low, high, open, close}: Candle){
         return (
             (low > this.cubeBottom(ppq) && low < this.cubeTop(ppq)) ||
             (high > this.cubeBottom(ppq) && high < this.cubeTop(ppq)) ||
@@ -40,7 +41,7 @@ export default class ChartChecker {
             (close > this.cubeBottom(ppq) && close < this.cubeTop(ppq))
         );
     }
-    public isContainedWithinCube(ppq: number, [,, high, low,]: TOHLC){
+    public isContainedWithinCube(ppq: number, {high, low}: Candle){
         return (
             low > this.cubeBottom(ppq) && low < this.cubeTop(ppq) &&
             high > this.cubeBottom(ppq) && high < this.cubeTop(ppq)
@@ -55,17 +56,17 @@ export default class ChartChecker {
      * @param ppq price position query to check against
      * @param param1 single OHLC data
      */
-    isTopWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
+    isTopWick(ppq: number, candle: Candle): boolean {
         // TODO: early escape if one or more conditions not met.
-        const bodyTop = this.bodyTop(open, close);
+        const bodyTop = this.bodyTop(candle.open, candle.close);
         // top of body within the block
         const BodyHighWithinCube = bodyTop > this.cubeBottom(ppq) && bodyTop <= this.cubeTop(ppq);
         // ensure a little bit of body
         const bodyHighHalfWayThrough = this.cubeTop(ppq) - bodyTop >= this.priceIncrement*0.2;
         // closing of lower body needs to be BELOW this cube (i.e., not within this cube)
-        const bodyLowIsBelowCube = this.bodyBottom(open, close) <= ppq;
+        const bodyLowIsBelowCube = this.bodyBottom(candle.open, candle.close) <= ppq;
 
-        return ppq > bodyTop && ppq <= high && BodyHighWithinCube && bodyLowIsBelowCube && bodyHighHalfWayThrough;
+        return ppq > bodyTop && ppq <= candle.high && BodyHighWithinCube && bodyLowIsBelowCube && bodyHighHalfWayThrough;
     }
 
     /**
@@ -73,7 +74,7 @@ export default class ChartChecker {
      * @param ppq price position query to check against
      * @param param1 single OHLC data
      */
-    isBottomWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
+    isBottomWick(ppq: number, {open, low, close}: Candle): boolean {
         // TODO: early escape if one or more conditions not met.
         const bodyBottom = this.bodyBottom(open, close);
         const bodyTop = this.bodyTop(open, close);
@@ -86,22 +87,22 @@ export default class ChartChecker {
         return ppq < bodyBottom && ppq >= low && BodyBottomWithinCube && bodyTopAboveCube && bodyHalfWayThrough;
     }
 
-    isWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
+    isWick(ppq: number, {open, high, low, close}: Candle): boolean {
         // TODO: only return true if the wick takes up a significant portion of this cube.. otherwise we branch to a different method that gives shorter wick..
         // contains body.. not wick.
         return (ppq > this.bodyTop(open, close) && ppq <= high) || (ppq < this.bodyBottom(open, close) && ppq >= low);
     }
 
-    isShortBottomWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
+    isShortBottomWick(ppq: number, {open, low, close}: Candle): boolean {
         if (low === this.bodyBottom(open, close)) return false;
         const lowIsWithinCube = this.isRequestedWithinCube(ppq, low);
         const wickIsHalfRange = (this.cubeTop(ppq)) - low <= this.priceIncrement * 0.5;
         return lowIsWithinCube && wickIsHalfRange;
     }
 
-    isShortTopWick(ppq: number, [, open, high, low, close]: TOHLC): boolean {
+    isShortTopWick(ppq: number, {open, high, close}: Candle): boolean {
         if (high === this.bodyTop(open, close)) return false;
-        const highIsWithinCube = this.isRequestedWithinCube(ppq, high)//high < (this.cubeTop(ppq)) && high > (this.cubeBottom(ppq))
+        const highIsWithinCube = this.isRequestedWithinCube(ppq, high);
         const wickIsHalfRange = high - (this.cubeBottom(ppq)) <= this.priceIncrement * 0.7;
         const isTowardsBottom = (this.cubeTop(ppq)) - high > high - (this.cubeBottom(ppq));
         return highIsWithinCube && wickIsHalfRange && isTowardsBottom;
@@ -111,11 +112,11 @@ export default class ChartChecker {
      * @param ppq price position query to check against
      * @param param1 single OHLC data
      */
-    isBody(ppq: number, [, open, high, low, close]: TOHLC): boolean {
+    isBody(ppq: number, {open, close}: Candle): boolean {
         return ppq >= this.bodyBottom(open, close) && ppq <= this.bodyTop(open, close)
     }
 
-    isShortBodyTop(ppq: number, [, open, high, low, close]: TOHLC): boolean { // ╻
+    isShortBodyTop(ppq: number, {open, high, close}: Candle): boolean { // ╻
         const bodyTop = this.bodyTop(open, close);
         const bodyBottom = this.bodyBottom(open, close);
         const distanceBodyTopAndCubeTop = (this.cubeTop(ppq)) - bodyTop;
@@ -129,7 +130,7 @@ export default class ChartChecker {
         return atPrice && wickIsCloseToBodyTop && bodyTopIsHalf && bodyBottomIsBelowOrNearCube;
     }
 
-    isShortBodyBottom(ppq: number, [, open, high, low, close]: TOHLC): boolean {
+    isShortBodyBottom(ppq: number, {open, low, close}: Candle): boolean {
         // TODO.. can only occur if the wick is within 0.1 percent distance from the body at the bottom meaning we dont show it.
         // ofc top needs to be within the cube and take about 50% of the cube or less (>= 10%)
         // +1: see above for the opposite.
@@ -148,8 +149,8 @@ export default class ChartChecker {
         return atPrice && cubeBelowHasNoWick && wickIsCloseToBodyBottom && bodyBottomIsHalf && bodyTopIsAboveOrNearCube;
     }
 
-    isNoMovement(ppq: number, [t, open, high, low, close]: TOHLC): boolean {
-        return this.hasDataWithinCube(ppq, [t,open,high,low,close]) && open == close && high == low;
+    isNoMovement(ppq: number, candle: Candle): boolean {
+        return this.hasDataWithinCube(ppq, candle) && candle.open == candle.close && candle.high == candle.low;
     }
 
 }
