@@ -20,7 +20,7 @@ import { Symbols } from "../utils/Symbols.ts";
 
 export class Candle {
     /**
-     * Represent all symbols of this candle from top to bottom.
+     * Represent all symbols of this candle from top to bottom. Symbols stored here should already be colored.
      * Example below:
      * ```
      * 0: ╽
@@ -60,5 +60,13 @@ export class Candle {
     isBearish(){return this.open > this.close}
     isBullish(){return !this.isBearish}
 
+    /**
+     * Adds an effect to the candle to be drawn (e.g., turn the candle purple or change the bg color).
+     * Supply with a method that wraps the passed parameter within ANSI escape color code. [Example of ANSI codes](https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797#color-codes)
+     * @param entireColumn indicated if should change the entire column (top to bottom) or just the candle/wick bits
+     */
+    addEffect(method: (x:string)=>string, entireColumn = false){
+        this.segments = this.segments.map(s=>entireColumn ? method(s) : (s.includes(Symbols.empty) ? s : method(s)));
+    }
 
 }
