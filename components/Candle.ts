@@ -18,19 +18,30 @@
 import { TOHLC } from "../interfaces/OHLC.ts";
 
 export class Candle {
-    constructor(public data: TOHLC){ }
+    constructor(public data: TOHLC){ 
+        console.log(this.bodyTop)
+    }
   
     get timestamp(){return this.data[0];}
     get open(){return this.data[1];}
     get high(){return this.data[2];}
     get low(){return this.data[3];}
     get close(){return this.data[4];}
+
+    get bodyBottom(){return Math.min(this.open, this.close);}
+    get bodyTop(){return Math.max(this.open, this.close);}
+    get wickBottom(){return Math.min(this.high, this.low);}
+    get wickTop(){return Math.max(this.high, this.low);}
+
+    isValid(){
+        return this.open !== undefined &&
+        this.high !== undefined &&
+        this.low !== undefined &&
+        this.close !== undefined;
+    }
   
     isBearish(){return this.open > this.close}
     isBullish(){return !this.isBearish}
 
-    bodyBottom(){return Math.min(this.open, this.close);}
-    bodyTop(){return Math.max(this.open, this.close);}
-    wickBottom(){return Math.min(this.high, this.low);}
-    wickTop(){return Math.max(this.high, this.low);}
+
 }
